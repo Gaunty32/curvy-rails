@@ -1,0 +1,14 @@
+Build a reusable master template of my existing application in THIS new, separate Replit project. The original application is the source for its architecture and functionality, but its production application, database, App Storage, data, credentials, and external accounts must remain untouched.
+
+IMPORTANT SOURCE-TRANSFER RULE:
+This is a blank project. Do not assume you can access the original project's files from a Replit URL. Do not Remix or import the original project wholesale: its workspace contains business-specific files and configuration. First establish a reviewed, code-only transfer that excludes credentials, uploaded assets, business data, and business-specific configuration. If you cannot access or safely transfer the source, STOP and tell me exactly what you need prepared in the original project. Do not build a substitute application from guesses.
+
+Build requirements:
+
+1. Preserve the original application's architecture, functionality, UI structure, database schema, integration architecture, and genuinely generic workflows. Remove all Select Branding Solutions / Select Uniforms-specific data, customers, orders, staff, credentials, tokens, files, logos, branding, domains, contact details, account IDs, analytics, logs, CRM/courier/social data, uploads, and configuration. Assume the existing catalogue and business content are NOT reusable.
+
+2. Use a NEW database built from clean schema/bootstrap migrations and reviewed generic seeds only. Do not copy and empty the production database. Use NEW, isolated App Storage. Separate schema/bootstrap migrations from historical repairs and business-specific seeds; do not depend on the old `_migration_flags` state.
+
+3. A fresh installation must start in server-enforced SETUP MODE. It must remain locked until explicitly activated. The wizard should guide me through business details, branding upload, first administrator, new Secrets, integrations, safe connection tests, automation review, readiness review, and explicit “ACTIVATE THIS INSTALLATION.” Record activation server-side. Activation must NOT enable every automation.
+
+4. Keep the application's actual Secret HANDLE names where applicable,
