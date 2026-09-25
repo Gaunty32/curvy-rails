@@ -1,0 +1,906 @@
+# CURVY RAILS — WEBSITE & COMMUNITY BUILD BRIEF
+
+We are adding a new customer-facing website called **Curvy Rails** to this existing project.
+
+Before writing or changing any code:
+
+1. Inspect the existing project structure, database, authentication, integrations and existing applications.
+2. Identify the safest way to add Curvy Rails without breaking, replacing or materially altering existing functionality.
+3. Reuse existing infrastructure where sensible, but keep Curvy Rails logically separated.
+4. Do not delete existing functionality, tables, data, integrations or routes.
+5. Do not connect live payment, email, HighLevel or other external services without approval.
+6. Build using test/demo data initially.
+7. Report your proposed architecture and any risks before making significant structural changes.
+
+---
+
+# 1. THE IDEA
+
+Curvy Rails is an ecommerce website selling plus-size clothing to men and women.
+
+The current brand covers approximately UK sizes **16–32**, although the platform must not hard-code that range because it may expand.
+
+This must NOT feel like a generic commercial plus-size ecommerce website.
+
+Curvy Rails is being built around an existing community originating largely from **Whatnot**.
+
+The website should therefore feel:
+
+* welcoming
+* independent
+* British
+* community-led
+* informal
+* warm
+* non-judgemental
+* trustworthy
+* fun
+* human
+
+It should NOT feel:
+
+* corporate
+* clinical
+* like a generic Shopify template
+* obsessed with weight/body size
+* overly polished
+* like a discount clothing warehouse
+
+The underlying idea is:
+
+## REAL CLOTHES. REAL PEOPLE. REAL HELP.
+
+Curvy Rails isn't simply somewhere to buy clothes.
+
+It is somewhere people help one another buy clothes.
+
+---
+
+# 2. BRAND
+
+Brand name:
+
+# Curvy Rails
+
+Existing logo will be supplied and should be incorporated into the design.
+
+Do not redesign the logo at this stage.
+
+The visual identity should complement the playful, bold nature of the existing Curvy Rails logo while allowing the website itself to remain modern and easy to navigate.
+
+Use plenty of whitespace, warm neutral backgrounds and restrained accent colours.
+
+Avoid stereotypical "plus-size" branding.
+
+Do not make everything pink.
+
+Photography should feature genuine-looking men and women with different body shapes and ages.
+
+People should look like customers rather than fashion models.
+
+---
+
+# 3. HOMEPAGE
+
+The homepage should immediately communicate that Curvy Rails is both a shop and a community.
+
+Suggested hero:
+
+# CLOTHES.
+
+# IN YOUR SIZE.
+
+### What a revolutionary idea.
+
+Supporting copy:
+
+**Real clothes. Real people. Real help.**
+
+Primary CTAs:
+
+**Shop Women**
+
+**Shop Men**
+
+Secondary CTA:
+
+**Join the Rails**
+
+The homepage should include sections such as:
+
+### Just Landed
+
+Products recently added.
+
+### Worn on the Rails
+
+Customer photographs showing verified purchasers wearing items they bought.
+
+### From the Rails
+
+Useful recent product experiences from verified purchasers.
+
+### Ask the Rails
+
+Interesting/recent questions being asked about products.
+
+### The Community
+
+Explain that Curvy Rails is a judgement-free community where members help each other.
+
+### Rail Stars
+
+Explain:
+
+**You don't earn more because you spend more.
+You earn more because you help more.**
+
+---
+
+# 4. ECOMMERCE
+
+Build standard ecommerce functionality including:
+
+* Men's products
+* Women's products
+* Categories
+* Product search
+* Filters
+* Size filters
+* Product variants
+* Stock levels
+* Product images
+* Product descriptions
+* Size information
+* Basket
+* Checkout
+* Order history
+* Customer accounts
+* Discount/promotion capability
+* Delivery options
+* Returns information
+
+Architecture should support Stripe as the preferred payment processor.
+
+DO NOT activate Stripe yet.
+
+Create the integration layer/configuration so Stripe credentials can be added later.
+
+---
+
+# 5. CUSTOMER ACCOUNTS
+
+Account registration should be presented publicly as:
+
+# JOIN THE RAILS
+
+Once registered, the customer's account area should be called:
+
+# MY RAIL
+
+My Rail should eventually contain:
+
+* My Orders
+* Things I Own
+* My Feedback
+* Questions I've Asked
+* Questions I've Answered
+* My Rail Stars
+* My Wallet
+* My Profile
+* Notification preferences
+
+Allow an optional field:
+
+**Whatnot username**
+
+This should never be publicly exposed unless the customer specifically chooses to display it.
+
+---
+
+# 6. VERIFIED OWNERSHIP
+
+This is extremely important.
+
+The system must know whether a registered customer has genuinely purchased a particular product.
+
+A user becomes a:
+
+## VERIFIED OWNER
+
+when their account can be matched against an order containing that product.
+
+Only Verified Owners may:
+
+* leave product experience/feedback
+* upload photographs against that product
+* earn feedback-related Rail Stars
+* answer owner-specific questions where required
+
+Do not rely solely on the customer claiming they own something.
+
+Design the data model so historical purchases from sources such as Whatnot could eventually be imported and associated with customer accounts.
+
+---
+
+# 7. FROM THE RAILS
+
+Do NOT call this section "Reviews".
+
+Call it:
+
+# FROM THE RAILS
+
+This is product experience rather than conventional star-rating reviewing.
+
+Only verified purchasers may contribute.
+
+Example:
+
+**Sophie — Verified Owner ✓**
+
+Bought: Size 22
+Usually wears: Size 22
+Fit: Just right
+
+> Absolutely love this dress. So comfortable and it flows really nicely. I'm 5'7" and it's the perfect length for me.
+
+Customers should optionally be able to provide structured information such as:
+
+* size purchased
+* size normally worn
+* fit
+* length
+* height
+* useful fit observations
+
+These should be optional wherever appropriate.
+
+Do NOT require customers to provide body measurements.
+
+---
+
+# 8. CUSTOMER PHOTOGRAPHS
+
+Verified owners can optionally upload photographs of themselves wearing a purchased product.
+
+Create a product section called:
+
+# WORN ON THE RAILS
+
+These photographs should appear alongside the customer's product experience.
+
+Photos must have:
+
+* upload
+* moderation status
+* reporting
+* removal capability
+* privacy controls
+* image optimisation
+* appropriate file/type limits
+
+Customers must explicitly agree that an uploaded image may be displayed publicly on Curvy Rails.
+
+Do NOT implement public comments underneath customer photographs.
+
+Do NOT create appearance ratings.
+
+Do NOT create emoji reactions to someone's body/image.
+
+A visitor may indicate that the accompanying **information was helpful**, but should not publicly rate the person in the photograph.
+
+The fundamental rule is:
+
+## We talk about the clothes. We don't judge the person wearing them.
+
+---
+
+# 9. ASK THE RAILS
+
+Every product should have:
+
+# ASK THE RAILS
+
+Anyone may READ questions and answers.
+
+Only registered users may ASK a question.
+
+Questions can be asked about ANY product; purchase is not required.
+
+Examples:
+
+"Does this come up long?"
+
+"How stretchy is the waistband?"
+
+"Would you size up in this?"
+
+"Is the material quite heavy?"
+
+Design the system so verified owners of that particular product can be notified when someone asks a question.
+
+Example notification:
+
+### Someone needs your help.
+
+Sarah is thinking about buying something you already own.
+
+"Does this blouse cling around the stomach or is it fairly loose?"
+
+**Answer Sarah →**
+
+Where possible, answers from verified owners should be clearly marked:
+
+**Verified Owner ✓**
+
+---
+
+# 10. COMMUNITY SAFETY
+
+Curvy Rails must be designed as a:
+
+# JUDGEMENT-FREE RAIL
+
+Build moderation/reporting functionality into community content from the start.
+
+Community content should be reportable.
+
+Administrators must be able to:
+
+* hide content
+* approve content
+* reject content
+* remove content
+* suspend community privileges
+* review reported content
+* remove photographs
+* reverse rewards where necessary
+
+The system should discourage:
+
+* body shaming
+* personal insults
+* sexual comments
+* comments about someone's appearance
+* harassment
+* discriminatory content
+* spam
+
+Negative PRODUCT feedback must NOT automatically be treated as undesirable.
+
+For example:
+
+"This comes up very small. I'd go up a size."
+
+is useful community information.
+
+The platform should reward usefulness, not positivity.
+
+---
+
+# 11. "THAT HELPED"
+
+Useful feedback and answers should have:
+
+### 👍 That helped
+
+Registered members can indicate that an answer or product experience helped them.
+
+Do not create dislike/downvote functionality.
+
+This metric can eventually help surface particularly useful contributions.
+
+---
+
+# 12. RAIL STARS
+
+Create a community reward system called:
+
+# RAIL STARS ⭐
+
+This is NOT a traditional spend-based loyalty programme.
+
+Customers DO NOT earn stars simply because they spend more money.
+
+The principle is:
+
+# YOU DON'T EARN MORE BECAUSE YOU SPEND MORE.
+
+# YOU EARN MORE BECAUSE YOU HELP MORE.
+
+Rail Stars can be earned through useful community participation.
+
+Make reward values configurable by administrators rather than hard-coded.
+
+Initial example rules could be:
+
+* Verified product experience submitted: +10 stars
+* Genuine customer photograph added: +10 stars
+* Answer a product question: +5 stars
+* Answer marked "That helped": bonus +5 stars
+
+These are initial examples only.
+
+Admin must be able to change reward values.
+
+---
+
+# 13. STAR WALLET
+
+Inside My Rail create:
+
+# MY WALLET
+
+Example:
+
+⭐ **145 Rail Stars**
+
+**You've helped 12 people on the Rails.**
+
+Display:
+
+* current stars
+* stars earned
+* stars redeemed
+* pending stars
+* reward history
+* available account credit
+
+Initially model:
+
+**100 Rail Stars = £5 Curvy Rails credit**
+
+BUT make this administrator configurable.
+
+Do not hard-code the conversion.
+
+Rail Stars themselves should not have a cash withdrawal value.
+
+---
+
+# 14. ANTI-ABUSE
+
+Rail Stars must not encourage spam.
+
+Therefore:
+
+* reward once per eligible action
+* verify purchase before purchase-feedback rewards
+* detect duplicate submissions
+* moderation can remove stars
+* deleted/rejected contributions can reverse rewards
+* configurable daily/activity limits
+* maintain a complete reward ledger
+
+Never simply store a single editable "stars balance".
+
+Use a proper transaction/ledger model so every award and redemption has an audit trail.
+
+---
+
+# 15. COMMUNITY PROMISE
+
+Create a page/section based around:
+
+# THE CURVY RAILS COMMUNITY PROMISE
+
+Suggested copy:
+
+**This is a judgement-free rail.**
+
+Curvy Rails is a community of real people wearing real clothes.
+
+If you've bought something, we'd love you to show the Rails how you got on with it.
+
+Tell us about the fit, the feel, what you liked, what you didn't — and, if you're comfortable, add a photo of you wearing it.
+
+No posing required.
+
+No filters required.
+
+No perfect bodies required.
+
+Your experience might be exactly what helps somebody else make their decision.
+
+**Be kind. Be useful. Be yourself.**
+
+We're here to talk about the clothes.
+
+**Not judge the person wearing them.**
+
+---
+
+# 16. POST-PURCHASE COMMUNITY LOOP
+
+Design the system so later we can automate:
+
+Customer purchases item
+
+↓
+
+Order delivered
+
+↓
+
+Wait configurable period
+
+↓
+
+Customer receives email:
+
+**How did you get on with it?**
+
+↓
+
+Customer leaves From the Rails feedback
+
+↓
+
+Earns Rail Stars
+
+↓
+
+Uploads optional photograph
+
+↓
+
+Earns additional stars
+
+↓
+
+Another customer asks a question
+
+↓
+
+Verified owners notified
+
+↓
+
+Owner answers
+
+↓
+
+Earns Rail Stars
+
+↓
+
+Questioner marks answer "That helped"
+
+↓
+
+Owner potentially earns bonus stars
+
+This loop is central to Curvy Rails.
+
+Build the database and events with this future automation in mind.
+
+---
+
+# 17. HIGHLEVEL
+
+The client intends to use a **HighLevel account at approximately £99/month**.
+
+Do NOT connect it yet.
+
+Design an integration layer for future HighLevel connection.
+
+We will eventually want HighLevel to support things such as:
+
+* welcome journeys
+* abandoned basket
+* post-purchase communication
+* feedback requests
+* question notifications
+* Rail Stars messages
+* customer segmentation
+* Whatnot/customer matching
+* re-engagement
+* email
+* potentially SMS/WhatsApp
+
+Keep marketing consent separate from transactional/service communications.
+
+---
+
+# 18. ADMIN
+
+Create a proper Curvy Rails administration area.
+
+Admin needs to manage:
+
+Products
+Categories
+Variants
+Stock
+Orders
+Customers
+Community members
+Feedback
+Photos
+Questions
+Answers
+Reports
+Moderation
+Rail Stars rules
+Rail Stars ledger
+Wallet balances
+Promotions
+Homepage content
+Community content
+Notifications
+
+Include useful dashboard metrics eventually such as:
+
+Orders
+Revenue
+Customers
+New members
+Feedback submitted
+Questions asked
+Questions answered
+Helpful interactions
+Photos uploaded
+Rail Stars issued
+Rail Stars redeemed
+
+---
+
+# 19. DATA MODEL
+
+Before implementation, design a robust schema covering at minimum:
+
+User
+Profile
+Address
+Product
+ProductVariant
+Category
+Inventory
+Order
+OrderItem
+Payment
+Shipment
+VerifiedOwnership
+ProductExperience
+ExperiencePhoto
+ProductQuestion
+ProductAnswer
+HelpfulVote
+ModerationReport
+RewardRule
+StarTransaction
+Wallet
+CreditTransaction
+Notification
+NotificationPreference
+ConsentRecord
+
+Do not create duplicate concepts if suitable structures already exist in this project.
+
+Inspect first.
+
+---
+
+# 20. DESIGN DIRECTION
+
+The website should feel like an independent British fashion/community website.
+
+Think:
+
+* editorial rather than corporate
+* warm rather than clinical
+* candid rather than model-perfect
+* community rather than catalogue
+* confident rather than apologetic
+* playful but not childish
+
+Use the supplied Curvy Rails logo.
+
+Potential navigation:
+
+**Women | Men | New In | The Rail | Community**
+
+Right-hand controls:
+
+Search
+My Rail
+Wallet/Stars
+Bag
+
+Mobile-first design is essential.
+
+---
+
+# 21. PRODUCT PAGE
+
+The product page is one of the most important pages.
+
+Suggested order:
+
+Product images
+
+Product name
+
+Price
+
+Colours/variants
+
+Size selection
+
+Size guide
+
+Add to Bag
+
+Delivery/returns
+
+Product description
+
+↓
+
+# WORN ON THE RAILS
+
+Real verified-owner photographs.
+
+↓
+
+# FROM THE RAILS
+
+Verified purchaser experiences.
+
+↓
+
+# ASK THE RAILS
+
+Questions and answers.
+
+↓
+
+Related products
+
+Community content should feel integral to the shopping experience, NOT like a reviews plugin added underneath an ecommerce page.
+
+---
+
+# 22. URGENT EXTERNAL REQUIREMENTS
+
+These are not available yet and should NOT block prototype development.
+
+Before production launch we require:
+
+1. Access/control of the website domain.
+2. Access/control of the email domain/DNS.
+3. Stripe account creation and access.
+4. HighLevel account.
+5. Final delivery/returns policies.
+6. Privacy/cookie/community terms and other appropriate legal content.
+7. Real product catalogue/data.
+8. Appropriate image/content permissions.
+
+Build placeholders/configuration for these.
+
+Do not invent credentials.
+
+---
+
+# 23. COMMERCIAL ARRANGEMENT
+
+This is project information rather than customer-facing website content.
+
+The proposed development/management arrangement is:
+
+**£1,000 per month retainer**
+
+plus
+
+**20% of website sales on an ongoing basis.**
+
+Additional costs required for third-party services, applications, plugins, advertising, photography, subscriptions or other external services are paid by the client where agreed.
+
+DO NOT display these terms anywhere on the public website.
+
+If this project already contains business-management functionality, record this appropriately there; otherwise treat this section as project documentation only.
+
+---
+
+# 24. FIRST BUILD
+
+Do NOT attempt to finish the entire platform in one uncontrolled pass.
+
+For the first implementation I want:
+
+### A. Design system
+
+Colours, typography, buttons, cards, forms, spacing, responsive navigation and use of the existing logo.
+
+### B. Homepage
+
+Build a polished homepage with realistic demo content.
+
+### C. Product listing
+
+Women's, men's and New In demo catalogue.
+
+### D. Product page
+
+Build one highly polished example product page demonstrating:
+
+* ecommerce information
+* Worn on the Rails
+* From the Rails
+* Ask the Rails
+* Verified Owner
+* That Helped
+
+### E. Join the Rails
+
+Registration/login UI.
+
+### F. My Rail
+
+Prototype account dashboard showing:
+
+* purchases
+* things owned
+* community activity
+* Rail Stars
+* wallet
+
+### G. Community page
+
+Explain the community and surface recent useful activity.
+
+### H. Admin foundation
+
+Provide the basic management architecture necessary for the above.
+
+Use realistic seeded DEMO users, products, questions, answers and community experiences so we can properly evaluate the experience.
+
+Clearly mark demo/test data internally.
+
+---
+
+# 25. IMPORTANT — DO NOT DO YET
+
+Do NOT:
+
+* activate live Stripe payments
+* send real emails
+* connect HighLevel
+* contact Whatnot
+* import real customer data
+* publish publicly
+* modify DNS
+* create live customer accounts
+* make irreversible database changes
+* remove existing project functionality
+
+We want to see and approve the experience first.
+
+---
+
+# 26. BEFORE YOU START
+
+First inspect the existing project.
+
+Then respond with:
+
+1. What is already present that can be reused.
+2. How you propose adding Curvy Rails safely.
+3. Proposed routes/pages.
+4. Proposed database changes.
+5. Existing functionality you believe should be reused.
+6. Any conflicts or risks you have identified.
+7. Your proposed implementation sequence.
+
+**Do not start the major build until you have reported this assessment.**
+
+The objective is not simply to create another ecommerce website.
+
+We are creating:
+
+# CURVY RAILS
+
+### Real clothes. Real people. Real help.
+
+**A shop powered by the people who actually wear the clothes.**
