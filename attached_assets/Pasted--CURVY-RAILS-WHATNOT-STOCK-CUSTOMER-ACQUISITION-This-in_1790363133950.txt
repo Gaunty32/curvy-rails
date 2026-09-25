@@ -1,0 +1,736 @@
+# CURVY RAILS — WHATNOT, STOCK & CUSTOMER ACQUISITION
+
+This instruction supplements the main Curvy Rails website brief.
+
+There is an important distinction between our two sales channels that must inform the architecture.
+
+## THE BUSINESS MODEL
+
+Curvy Rails will initially have two very different ways of selling.
+
+### WHATNOT — PRIMARY ACQUISITION CHANNEL
+
+Whatnot live auctions will initially be our main sales activity.
+
+The products sold there will predominantly be:
+
+* one-off garments
+* individual pieces
+* opportunity purchases
+* clearance stock
+* items which may never become permanent Curvy Rails products
+
+We DO NOT need Whatnot inventory synchronised with the Curvy Rails website.
+
+### CURVY RAILS WEBSITE — STOCKED RANGES
+
+The website will sell products we deliberately hold in stock across sizes/variants.
+
+These will be repeatable product lines with proper SKU-level inventory.
+
+The website therefore needs its own comprehensive stock-management system.
+
+---
+
+# THE CONNECTION IS THE CUSTOMER — NOT THE STOCK
+
+This is the most important principle.
+
+Do NOT attempt to synchronise Whatnot inventory with Curvy Rails inventory.
+
+Instead, we want to use Whatnot to:
+
+DISCOVER PEOPLE
+
+↓
+
+SELL TO THEM LIVE
+
+↓
+
+INTRODUCE THEM TO CURVY RAILS
+
+↓
+
+GET THEM TO JOIN THE RAILS
+
+↓
+
+BUILD A DIRECT CUSTOMER RELATIONSHIP
+
+↓
+
+INTRODUCE THEM TO STOCKED WEBSITE PRODUCTS
+
+↓
+
+ENCOURAGE COMMUNITY PARTICIPATION
+
+↓
+
+GENERATE REPEAT WEBSITE PURCHASES
+
+Whatnot is therefore both a sales channel and an important customer-acquisition channel.
+
+Curvy Rails becomes the customer's longer-term home.
+
+---
+
+# 1. WHATNOT INTEGRATION LAYER
+
+Do not invent Whatnot functionality or assume APIs exist.
+
+Create a clean, isolated Whatnot integration layer that can later use whatever legitimate functionality Whatnot makes available.
+
+We eventually want to investigate whether we can obtain/import appropriate information such as:
+
+* Whatnot username
+* order reference
+* purchase date
+* products purchased
+* amount paid
+* customer identity information legitimately supplied to the seller
+* delivery information where appropriate
+
+We DO NOT currently need:
+
+* Whatnot stock sync
+* Whatnot listing sync
+* website products pushed to Whatnot
+* Whatnot inventory pulled into Curvy Rails
+
+Do not build these.
+
+---
+
+# 2. CUSTOMER IDENTITY
+
+The important challenge is identifying a Whatnot customer when they subsequently join Curvy Rails.
+
+Curvy Rails registration should therefore support:
+
+### Did you find us on Whatnot?
+
+Yes / No
+
+If Yes:
+
+### What's your Whatnot username?
+
+Optional.
+
+Store this privately against the customer profile.
+
+Do not publicly display the Whatnot username unless the member explicitly chooses to do so.
+
+Architecture should allow an administrator eventually to match:
+
+WHATNOT BUYER
+
+to
+
+CURVY RAILS MEMBER
+
+where there is sufficient legitimate evidence to do so.
+
+Never guess customer matches.
+
+---
+
+# 3. JOIN THE RAILS
+
+The primary Whatnot-to-website CTA should NOT necessarily be:
+
+"Shop our website."
+
+It should be:
+
+# JOIN THE RAILS
+
+We are inviting someone into the Curvy Rails community.
+
+Once registered they gain:
+
+* My Rail
+* Rail Stars
+* My Wallet
+* Ask the Rails
+* community participation
+* purchase history
+* stocked Curvy Rails products
+* future community benefits
+
+This gives customers a reason to register even if they don't immediately want to buy something else.
+
+---
+
+# 4. TRACKABLE WHATNOT ROUTING
+
+Create first-party attribution functionality.
+
+We need trackable URLs that can be used during live broadcasts.
+
+For example:
+
+/live
+
+/join
+
+/new
+
+/stars
+
+Links should support campaign/source parameters.
+
+Example concept:
+
+source = whatnot
+medium = live
+campaign = friday-night-live
+
+Persist useful first-party acquisition attribution against:
+
+* anonymous session where appropriate
+* registration
+* first website order
+
+Do not depend entirely on third-party analytics.
+
+We eventually want to know:
+
+Whatnot visitors
+
+↓
+
+Whatnot visitors who Join the Rails
+
+↓
+
+Whatnot-acquired website customers
+
+↓
+
+Website revenue from those customers
+
+↓
+
+Repeat revenue
+
+↓
+
+Customer lifetime value
+
+---
+
+# 5. /LIVE
+
+Create a dedicated route:
+
+# /live
+
+This is the permanent destination we can promote during Whatnot broadcasts.
+
+It should be controllable from Curvy Rails Admin.
+
+When we are live:
+
+# 🔴 WE'RE LIVE
+
+**Curvy Rails is live on Whatnot right now.**
+
+[JOIN THE LIVE]
+
+Then:
+
+### New here?
+
+**We're more than a shop. Curvy Rails is a community of real people helping each other find clothes they actually want to wear.**
+
+[JOIN THE RAILS]
+
+Continue the page with:
+
+* stocked new arrivals
+* Worn on the Rails
+* From the Rails
+* community activity
+* Rail Stars explanation
+* men's products
+* women's products
+
+The /live page is a BRIDGE between Whatnot and Curvy Rails.
+
+---
+
+# 6. LIVE EVENT MANAGEMENT
+
+Create a simple Live Event model/admin feature.
+
+Admin should be able to set:
+
+* Live / Not Live
+* title
+* description
+* external Whatnot URL
+* scheduled date/time
+* optional image
+* campaign code
+
+When Live = true:
+
+The website can display a subtle:
+
+🔴 CURVY RAILS IS LIVE
+
+notification/banner.
+
+Clicking it should take visitors to /live.
+
+Do not automatically embed Whatnot unless we later confirm this is technically and contractually appropriate.
+
+---
+
+# 7. QR CODES
+
+We want to be able to promote Curvy Rails visually during live auctions.
+
+Create the ability for Admin to generate/display QR codes for tracked Curvy Rails destinations.
+
+Examples:
+
+JOIN THE RAILS
+
+SHOP NEW IN
+
+MY RAIL
+
+RAIL STARS
+
+CURVYRAILS.CO.UK/LIVE
+
+A QR campaign should have:
+
+* name
+* destination
+* source
+* campaign
+* created date
+
+and basic tracking.
+
+This will let us understand which live promotions generate website activity.
+
+---
+
+# 8. WEBSITE STOCK MANAGEMENT
+
+The WEBSITE requires proper stock control.
+
+This is independent from Whatnot one-off auction inventory.
+
+Every stocked Curvy Rails website product should have variants/SKUs.
+
+Example:
+
+Product:
+
+Floral Midi Dress
+
+Variants:
+
+CR-1001-GRN-16
+CR-1001-GRN-18
+CR-1001-GRN-20
+CR-1001-GRN-22
+CR-1001-GRN-24
+etc.
+
+For each SKU track:
+
+* product
+* size
+* colour
+* SKU
+* barcode if applicable
+* supplier
+* cost price
+* retail price
+* physical stock
+* reserved stock
+* available stock
+* incoming stock
+* reorder level
+* location if applicable
+
+Do not hard-code size ranges.
+
+---
+
+# 9. STOCK LEDGER
+
+Do not simply overwrite stock quantity.
+
+Create an auditable Stock Movement ledger.
+
+Movement types should support:
+
+PURCHASE_RECEIPT
+WEBSITE_SALE
+CUSTOMER_RETURN
+ORDER_CANCELLED
+DAMAGED
+LOST
+MANUAL_ADJUSTMENT
+STOCKTAKE_CORRECTION
+RESERVATION
+RESERVATION_RELEASE
+
+Each movement should record:
+
+* SKU
+* quantity
+* movement type
+* date/time
+* reference/order
+* user/system responsible
+* notes
+
+We should always be able to answer:
+
+**Why does the system say we have six of these?**
+
+---
+
+# 10. STOCK ADMIN
+
+Create:
+
+# STOCK
+
+within Curvy Rails Admin.
+
+Dashboard should eventually show:
+
+TOTAL STOCK UNITS
+AVAILABLE
+RESERVED
+LOW STOCK
+OUT OF STOCK
+INCOMING
+STOCK VALUE
+
+Search/filter by:
+
+* SKU
+* product
+* size
+* colour
+* category
+* supplier
+* stock status
+
+Individual product/SKU history should show stock movements.
+
+---
+
+# 11. WEBSITE RESERVATIONS
+
+Website checkout must protect against overselling.
+
+Concept:
+
+AVAILABLE STOCK
+
+↓
+
+Customer begins checkout
+
+↓
+
+TEMPORARY RESERVATION
+
+↓
+
+Payment succeeds
+
+↓
+
+WEBSITE SALE
+
+or:
+
+Payment fails/expires
+
+↓
+
+RESERVATION RELEASED
+
+Reservation timeout should be configurable.
+
+Use proper database transaction handling to avoid simultaneous orders creating negative inventory.
+
+---
+
+# 12. STOCKTAKE
+
+Build architecture for simple stocktaking.
+
+Admin should be able to:
+
+* start stocktake
+* enter/count SKU
+* compare expected vs actual
+* see discrepancy
+* approve adjustment
+
+Any adjustment must create a Stock Movement.
+
+Do not silently overwrite inventory.
+
+---
+
+# 13. WHATNOT CUSTOMERS AND MY RAIL
+
+Longer term, if we can reliably establish that a registered member made a purchase through Whatnot, allow the architecture to record this.
+
+Potential My Rail display:
+
+### Bought on the Live ✓
+
+This does NOT mean the Whatnot product has to become website stock.
+
+We simply want the customer relationship/history to recognise that Curvy Rails originally met them through Whatnot.
+
+Do not build automatic verification until the available Whatnot data has been established.
+
+---
+
+# 14. WEBSITE VERIFIED OWNERSHIP
+
+For normal stocked website products, existing Curvy Rails purchase verification remains as described in the original brief.
+
+Website purchase
+
+↓
+
+Verified Owner
+
+↓
+
+Can contribute:
+
+FROM THE RAILS
+
+WORN ON THE RAILS
+
+ASK/ANSWER THE RAILS
+
+↓
+
+Earn Rail Stars.
+
+Do not assume that a Whatnot one-off purchase maps to a website product.
+
+---
+
+# 15. HIGHLEVEL CRM
+
+HighLevel will ultimately become the communication/CRM layer.
+
+The website should eventually be able to classify customers/contacts such as:
+
+* Whatnot sourced
+* Curvy Rails member
+* website customer
+* repeat website customer
+* community contributor
+* verified owner
+* Rail Stars participant
+
+HighLevel should NOT become the master database for orders or inventory.
+
+Curvy Rails remains the source of truth for commerce/community information.
+
+HighLevel receives the customer/marketing information necessary for communication and automation.
+
+Do not connect HighLevel yet.
+
+---
+
+# 16. CUSTOMER CONSENT
+
+Acquiring a customer through Whatnot does NOT automatically mean they have consented to Curvy Rails marketing.
+
+Keep separate records for:
+
+* account/service communications
+* marketing email consent
+* SMS consent where relevant
+* other marketing channels
+
+Do not automatically subscribe imported Whatnot customers to marketing.
+
+The preferred journey is to encourage them to actively:
+
+# JOIN THE RAILS
+
+and make their own communication choices.
+
+---
+
+# 17. FUTURE CROSS-SELLING
+
+The eventual goal is intelligent but non-aggressive cross-selling.
+
+For example:
+
+Customer joins after discovering Curvy Rails through Whatnot.
+
+↓
+
+Website understands:
+
+Women's customer
+Typical sizes
+Products viewed
+Website purchases
+Products owned
+
+↓
+
+Curvy Rails can surface genuinely relevant stocked products.
+
+Do not infer sensitive personal characteristics.
+
+Keep recommendations product/behaviour based.
+
+---
+
+# 18. REPORTING
+
+Eventually we need a dashboard that separates:
+
+### WHATNOT ACQUISITION
+
+Visitors
+Join the Rails registrations
+Conversion to website customer
+Website revenue
+Repeat website revenue
+
+### WEBSITE
+
+Visitors
+Members
+Orders
+Revenue
+AOV
+Conversion rate
+Stock performance
+
+### COMMUNITY
+
+Feedback contributions
+Questions
+Answers
+Photos
+Helpful interactions
+Active members
+Rail Stars issued/redeemed
+
+The crucial commercial metric is:
+
+# WHATNOT-ACQUIRED CUSTOMER LIFETIME VALUE
+
+We want to know whether somebody we first met through a live auction subsequently becomes a valuable Curvy Rails customer/community member.
+
+---
+
+# 19. DO NOT BUILD
+
+Specifically DO NOT build:
+
+❌ Whatnot stock synchronisation
+
+❌ Website stock pushed to Whatnot
+
+❌ Whatnot stock pulled into website
+
+❌ Shared Whatnot/website inventory
+
+❌ Automatic Whatnot listing creation
+
+❌ Unsupported Whatnot API calls
+
+❌ Automatic marketing of imported Whatnot customer data
+
+---
+
+# 20. ARCHITECTURAL SUMMARY
+
+The model is:
+
+```
+              WHATNOT
+           LIVE AUCTIONS
+          ONE-OFF CLOTHING
+                 │
+                 │
+          FIND CUSTOMERS
+                 │
+                 ▼
+           JOIN THE RAILS
+                 │
+                 ▼
+           CURVY RAILS
+     ┌───────────┼───────────┐
+     │           │           │
+  WEBSITE      MY RAIL    COMMUNITY
+  STOCKED                  FEATURES
+  PRODUCTS
+     │           │           │
+     └───────────┼───────────┘
+                 │
+             RAIL STARS
+                 │
+                 ▼
+         REPEAT RELATIONSHIP
+                 │
+                 ▼
+             HIGHLEVEL
+```
+
+# THE IMPORTANT DISTINCTION
+
+**Whatnot inventory and website inventory are separate.**
+
+**The customer relationship is what connects the two.**
+
+Whatnot helps us find customers.
+
+Curvy Rails gives those customers somewhere to belong.
+
+The website gives them stocked products to purchase outside the live auctions.
+
+The community gives them a reason to keep coming back.
+
+---
+
+# BEFORE BUILDING THIS
+
+First inspect the current project and the original Curvy Rails specification.
+
+Then report back with:
+
+1. What already exists that can support this.
+2. How website stock is currently structured.
+3. Proposed additions for stock management.
+4. Proposed Whatnot/customer acquisition architecture.
+5. How attribution will be stored.
+6. How `/live` will work.
+7. How this integrates with Join the Rails / My Rail.
+8. What elements require later confirmation of Whatnot capabilities.
+9. Any conflicts with the existing schema.
+10. Recommended implementation order.
+
+Do not start significant implementation until this assessment has been reviewed.

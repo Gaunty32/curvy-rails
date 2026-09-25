@@ -1,51 +1,22 @@
-# Curvy Rails
+# Curvy Rails — fresh source import
 
-Curvy Rails is a demo-first British clothing shop and community where real product experiences help people shop with confidence.
+The uploaded clean-source ZIP is the authoritative application source. This is a separate installation, not the previous demo or the original live installation. Preserve the imported shop, staff order system, customer portal, and API rather than recreating or redesigning them.
 
-## Run & Operate
+## Services
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Shop: `artifacts/shop` at `/`
+- Staff order system and first-run setup: `artifacts/order-system` at `/order-system/`
+- Customer portal: `artifacts/customer-portal` at `/customer-portal/`
+- API: `artifacts/api-server` at `/api`
 
-## Stack
+Use the existing managed artifact workflows. The imported package files and `pnpm-lock.yaml` define dependencies; the lockfile also accounts for this project's separate mockup sandbox.
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+## Fresh-install safety
 
-## Where things live
+- The project's development PostgreSQL database has the six imported schema-only migrations (`lib/db/drizzle/0000`–`0005`) applied in order. Do not use `drizzle push` to replace this migration sequence or copy data from another installation.
+- This project's own App Storage was provisioned. Never copy the original database, bucket, uploads, credentials, administrator, URLs, integration settings, or webhooks.
+- The API requires `TEMPLATE_FRESH_INSTALL=true` for this remote development database and checks the installation schema before loading the application. Before activation it exposes setup/status routes and locks operational routes.
+- First-admin setup additionally requires distinct, newly generated `PORTAL_JWT_SECRET` and `INSTALLATION_BOOTSTRAP_TOKEN`, each at least 32 characters, supplied via Replit Secrets. Do not put these values in source or chat. The administrator enters their own password and business details in the first-run screen.
+- Leave optional integrations, background jobs, live payments, email, and external requests disabled until the user explicitly approves and configures resources for this installation. Do not publish without explicit approval.
 
-- `artifacts/curvy-rails` — customer-facing web prototype and visual theme.
-- `artifacts/api-server/src/routes/curvy-rails` — read-only fictional demo data.
-- `lib/api-spec/openapi.yaml` — source of truth for demo API contracts.
-- `docs/curvy-rails-architecture.md` — proposed persistent data model and safety boundaries (not a migration).
-
-## Architecture decisions
-
-- First build is a reviewable demo: no live customer accounts, payments, database writes, uploads or outbound communications.
-- Curvy Rails routes are grouped under `/api/curvy-rails`; keep other API and canvas functionality intact.
-- Account, admin, reward and commerce previews use fictional data; later server-side ownership and ledger rules are described in `docs/curvy-rails-architecture.md`.
-
-## Product
-
-- Homepage, demo catalogue, product detail with community experiences and questions, community page, sample My Rail, demo bag and admin preview.
-
-## User preferences
-
-- Keep the supplied Curvy Rails logo. Build a warm, independent, community-led UK experience without stereotypical plus-size branding.
-- Do not publish or connect Stripe, email, HighLevel, Whatnot or real customer data until explicitly approved.
-
-## Gotchas
-
-- Demo API content is fictional and read-only. It does not establish real verified ownership, consent, account access or moderator powers.
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+Read `IMPORT-README.md`, `TRANSFER-STATUS.md`, `ISOLATION-READINESS.md`, and `SECRETS-MANIFEST.md` before changing installation behavior. The source's full API typecheck has known historical errors; the imported packages' production builds were verified separately.
