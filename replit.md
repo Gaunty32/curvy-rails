@@ -1,6 +1,6 @@
 # Curvy Rails
 
-Project initialized. Product scope and features will be defined in the next instruction.
+Curvy Rails is a demo-first British clothing shop and community where real product experiences help people shop with confidence.
 
 ## Run & Operate
 
@@ -22,23 +22,29 @@ Project initialized. Product scope and features will be defined in the next inst
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/curvy-rails` — customer-facing web prototype and visual theme.
+- `artifacts/api-server/src/routes/curvy-rails` — read-only fictional demo data.
+- `lib/api-spec/openapi.yaml` — source of truth for demo API contracts.
+- `docs/curvy-rails-architecture.md` — proposed persistent data model and safety boundaries (not a migration).
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- First build is a reviewable demo: no live customer accounts, payments, database writes, uploads or outbound communications.
+- Curvy Rails routes are grouped under `/api/curvy-rails`; keep other API and canvas functionality intact.
+- Account, admin, reward and commerce previews use fictional data; later server-side ownership and ledger rules are described in `docs/curvy-rails-architecture.md`.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Homepage, demo catalogue, product detail with community experiences and questions, community page, sample My Rail, demo bag and admin preview.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Keep the supplied Curvy Rails logo. Build a warm, independent, community-led UK experience without stereotypical plus-size branding.
+- Do not publish or connect Stripe, email, HighLevel, Whatnot or real customer data until explicitly approved.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Demo API content is fictional and read-only. It does not establish real verified ownership, consent, account access or moderator powers.
 
 ## Pointers
 

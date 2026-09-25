@@ -1,62 +1,217 @@
-import { type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ErrorBoundary } from '@/components/error-boundary';
-import { Toaster } from '@/components/ui/toaster';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import NotFound from '@/pages/not-found';
+import { Link, Route, Switch, useLocation, useParams, Router as WouterRouter } from 'wouter';
+import { ArrowRight, ArrowLeft, ShoppingBag, Menu, X, Search, Heart, Plus, Minus, Trash2, Check, MessageCircle, Star, ShieldCheck, SlidersHorizontal, LockKeyhole, Package } from 'lucide-react';
 import {
-  Route,
-  Switch,
-  useLocation,
-  Router as WouterRouter,
-} from 'wouter';
+  useGetCurvyRailsHome, getGetCurvyRailsHomeQueryKey,
+  useListCurvyRailsProducts, getListCurvyRailsProductsQueryKey,
+  useGetCurvyRailsProduct, getGetCurvyRailsProductQueryKey,
+  useGetCurvyRailsCommunity, getGetCurvyRailsCommunityQueryKey,
+  useGetCurvyRailsMyRail, getGetCurvyRailsMyRailQueryKey,
+  useGetCurvyRailsAdminOverview, getGetCurvyRailsAdminOverviewQueryKey,
+  type Product, type ProductExperience, type ProductQuestion, type ListCurvyRailsProductsParams
+} from '@workspace/api-client-react';
+import logo from '@assets/image_1790346553658.png';
 
-const queryClient = new QueryClient();
-
-function Home() {
-  return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Replit Agent is building...
-        </h1>
-        <p className="mt-2 text-sm text-gray-600">
-          Your app will appear here once it's ready.
-        </p>
-      </div>
-    </div>
-  );
+const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 60000 } } });
+const money = (n: number) => `£${n.toFixed(2)}`;
+const date = (s: string) => new Date(s).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+type BagItem = { product: Product; size: string; quantity: number };
+type DemoContextValue = { bag: BagItem[]; add: (product: Product, size: string) => void; change: (slug: string, size: string, delta: number) => void; helpful: string[]; toggleHelpful: (id: string) => void; notice: string; clearNotice: () => void };
+const DemoContext = createContext<DemoContextValue | null>(null);
+function useDemo() { const value = useContext(DemoContext); if (!value) throw new Error('Missing demo context'); return value; }
+function DemoProvider({ children }: { children: ReactNode }) {
+  const [bag, setBag] = useState<BagItem[]>([]);
+  const [helpful, setHelpful] = useState<string[]>([]);
+  const [notice, setNotice] = useState('');
+  const add = (product: Product, size: string) => { setBag(old => { const found = old.find(i => i.product.slug === product.slug && i.size === size); return found ? old.map(i => i === found ? { ...i, quantity: i.quantity + 1 } : i) : [...old, { product, size, quantity: 1 }]; }); setNotice('Added to your demo bag. Nothing has been purchased.'); };
+  const change = (slug: string, size: string, delta: number) => setBag(old => old.map(i => i.product.slug === slug && i.size === size ? { ...i, quantity: i.quantity + delta } : i).filter(i => i.quantity > 0));
+  const toggleHelpful = (id: string) => setHelpful(old => old.includes(id) ? old.filter(x => x !== id) : [...old, id]);
+  return <DemoContext.Provider value={{ bag, add, change, helpful, toggleHelpful, notice, clearNotice: () => setNotice('') }}>{children}</DemoContext.Provider>;
 }
 
-function Router() {
-  return (
-    // Keep a shared shell (sidebar, navbar) outside the boundary so it
-    // survives a page crash.
-    <RoutedErrorBoundary>
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route component={NotFound} />
-      </Switch>
-    </RoutedErrorBoundary>
-  );
+function Brand({ large = false }: { large?: boolean }) {
+  return <Link href="/" className={large ? 'block w-[160px] md:w-[205px] h-[78px] overflow-hidden shrink-0' : 'block w-[104px] md:w-[127px] h-[55px] md:h-[63px] overflow-hidden shrink-0'} data-testid="link-home-logo" aria-label="Curvy Rails home"><img src={logo} alt="Curvy Rails, Plus sizes 16–32" className={large ? 'w-[160px] md:w-[205px] max-w-none mix-blend-multiply -mt-[37px] md:-mt-[50px]' : 'w-[104px] md:w-[127px] max-w-none mix-blend-multiply -mt-[24px] md:-mt-[29px]'} /></Link>;
 }
-
-function RoutedErrorBoundary({ children }: { children: ReactNode }) {
+function Header() {
+  const [open, setOpen] = useState(false);
   const [location] = useLocation();
-  return <ErrorBoundary resetKey={location}>{children}</ErrorBoundary>;
+  const { bag } = useDemo();
+  const count = bag.reduce((a, b) => a + b.quantity, 0);
+  const nav = [{ label: 'Shop all', href: '/shop' }, { label: 'Women', href: '/shop/women' }, { label: 'Men', href: '/shop/men' }, { label: 'New in', href: '/shop/new' }, { label: 'The community', href: '/community' }];
+  return <>
+    <div className="bg-[#2352a4] text-[#f9f4e9] text-center px-4 py-2.5 text-[11px] md:text-xs font-semibold tracking-[.05em]">A little more room to be yourself. <span className="opacity-70 ml-1">Demo storefront · no live purchases</span></div>
+    <header className="bg-[#f8f5ee] border-b border-[#dfd7cb] sticky top-0 z-40">
+      <div className="container-wide flex items-center justify-between h-[72px] md:h-[88px] gap-4">
+        <Brand />
+        <nav className="hidden lg:flex items-center gap-7 xl:gap-10 text-[13px] font-bold" aria-label="Main navigation">{nav.map(n => <Link key={n.href} href={n.href} data-testid={`link-nav-${n.label.toLowerCase().replaceAll(' ','-')}`} className={`hover:text-[#2352a4] transition-colors ${location === n.href ? 'text-[#2352a4]' : ''}`}>{n.label}</Link>)}</nav>
+        <div className="flex items-center gap-3 md:gap-5">
+          <Link href="/join" className="hidden md:block text-[13px] font-bold hover:text-[#2352a4]" data-testid="link-join-header">Join the Rails</Link>
+          <Link href="/my-rail" className="hidden md:block text-[13px] font-bold hover:text-[#2352a4]" data-testid="link-my-rail-header">My Rail</Link>
+          <Link href="/bag" className="relative flex items-center gap-2 font-bold text-xs" data-testid="link-bag-header" aria-label={`Bag with ${count} items`}><ShoppingBag size={21} strokeWidth={1.7}/><span className="hidden sm:inline">Bag</span>{count > 0 && <span className="absolute -top-2 -right-2 sm:static rounded-full bg-[#2352a4] text-white min-w-5 h-5 grid place-items-center text-[10px]">{count}</span>}</Link>
+          <button data-testid="button-menu" className="lg:hidden p-1" aria-label={open ? 'Close menu' : 'Open menu'} onClick={() => setOpen(!open)}>{open ? <X size={24}/> : <Menu size={24}/>}</button>
+        </div>
+      </div>
+      {open && <nav className="lg:hidden border-t border-[#dfd7cb] bg-[#f8f5ee] px-5 py-4 grid gap-0" aria-label="Mobile navigation">{[...nav, {label:'Join the Rails',href:'/join'}, {label:'My Rail',href:'/my-rail'}].map(n => <Link onClick={() => setOpen(false)} href={n.href} key={n.href} data-testid={`link-mobile-${n.href.replaceAll('/','-')}`} className="py-3 border-b border-[#e8e0d4] font-semibold">{n.label}</Link>)}</nav>}
+    </header>
+  </>;
+}
+function Footer() {
+  return <footer className="bg-[#282b27] text-[#f5f0e6] mt-20">
+    <div className="container-wide py-16 md:py-20 grid md:grid-cols-[1.5fr_1fr_1fr] gap-12">
+      <div><p className="eyebrow text-[#f0d486] mb-5">The good kind of company</p><h2 className="display text-4xl md:text-5xl max-w-md">Real clothes.<br/>Real people. Real help.</h2><p className="text-sm text-[#d7d2c9] mt-6 max-w-sm leading-relaxed">An independent British shop with a community at its heart. No body commentary. Just honest advice about the clothes.</p></div>
+      <div><p className="eyebrow text-[#f0d486] mb-5">Explore</p><div className="grid gap-3 text-sm"><Link href="/shop">Shop the rail</Link><Link href="/community">The community</Link><Link href="/join">Join the Rails</Link><Link href="/my-rail">My Rail sample</Link></div></div>
+      <div><p className="eyebrow text-[#f0d486] mb-5">A note from us</p><p className="text-sm text-[#d7d2c9] leading-relaxed">This is a test-only preview. Products, members, activity and orders are sample content. No payments, account creation or checkout are available.</p><Link href="/admin" className="inline-block text-xs underline underline-offset-4 mt-6 text-[#d7d2c9]">View admin sample</Link></div>
+    </div>
+    <div className="container-wide py-5 border-t border-[#5a5b55] flex flex-col sm:flex-row gap-2 justify-between text-xs text-[#aaa99f]"><span>© Curvy Rails · Independent style, shared honestly.</span><span>Demo prototype · Not a live shop</span></div>
+  </footer>;
+}
+function Shell({ children }: { children: ReactNode }) {
+  const { notice, clearNotice } = useDemo();
+  return <div className="min-h-[100dvh] flex flex-col"><Header/><main className="flex-1">{children}</main><Footer/>{notice && <div role="status" data-testid="status-demo-notice" className="fixed bottom-5 right-5 left-5 sm:left-auto z-50 bg-[#282b27] text-[#faf7ee] shadow-xl px-5 py-4 flex items-center gap-5 max-w-md text-sm"><Check size={18} className="text-[#f0d486] shrink-0"/><span>{notice}</span><button data-testid="button-close-notice" aria-label="Dismiss notice" onClick={clearNotice}><X size={17}/></button></div>}</div>;
+}
+function Loading({ label = 'Finding the good stuff' }: { label?: string }) { return <div className="container-wide py-16" aria-label={label}><div className="skeleton h-5 w-32 mb-8"/><div className="skeleton h-14 w-2/3 max-w-lg mb-12"/><div className="grid grid-cols-2 md:grid-cols-4 gap-4">{[1,2,3,4].map(x => <div key={x}><div className="skeleton aspect-[3/4]"/><div className="skeleton h-4 w-2/3 mt-4"/></div>)}</div></div>; }
+function ErrorState({ retry }: { retry: () => void }) { return <div className="container-narrow py-28 text-center"><p className="eyebrow text-[#2352a4]">A small snag</p><h1 className="display text-5xl mt-4">This rail isn't loading.</h1><p className="text-[#6d6a62] mt-5">The sample content didn't arrive. Give it another go.</p><button data-testid="button-retry" onClick={retry} className="btn btn-blue mt-8">Try again <ArrowRight size={16}/></button></div>; }
+function SectionHead({ kicker, title, href, action }: { kicker: string; title: string; href?: string; action?: string }) { return <div className="flex items-end justify-between gap-5 mb-8 md:mb-10"><div><p className="eyebrow text-[#2352a4] mb-3">{kicker}</p><h2 className="display text-[38px] md:text-[58px]">{title}</h2></div>{href && <Link data-testid={`link-section-${href.replaceAll('/','-')}`} href={href} className="line-link shrink-0 hidden sm:inline-flex">{action || 'See more'} <ArrowRight size={15}/></Link>}</div>; }
+function ProductCard({ product }: { product: Product }) { return <Link href={`/product/${product.slug}`} className="group block min-w-0" data-testid={`card-product-${product.slug}`}><div className="image-frame aspect-[3/4] relative"><img src={product.imageUrl} alt={product.imageAlt} loading="lazy"/>{product.isNew && <span className="absolute top-3 left-3 bg-[#f4d981] px-3 py-1.5 eyebrow text-[9px]">Just landed</span>}</div><div className="pt-4 flex justify-between gap-2"><div><p className="text-[10px] uppercase tracking-[.13em] text-[#716e65] mb-1">{product.category} · {product.colour}</p><h3 className="text-sm md:text-base font-semibold group-hover:text-[#2352a4] transition-colors">{product.name}</h3><p className="text-xs text-[#6b685f] mt-2">{product.verifiedOwnerCount} verified owner{product.verifiedOwnerCount === 1 ? '' : 's'} sharing fit notes</p></div><span className="text-sm font-bold shrink-0">{money(product.price)}</span></div></Link>; }
+function ExperienceCard({ experience: e }: { experience: ProductExperience }) {
+  const { helpful, toggleHelpful } = useDemo();
+  const active = helpful.includes(e.id);
+  return <article className="card-surface p-5 md:p-7 flex flex-col" data-testid={`card-experience-${e.id}`}>
+    <div className="flex items-center justify-between gap-3"><span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[.1em] font-bold text-[#2352a4]"><ShieldCheck size={14}/> Verified owner</span><span className="text-xs text-[#777369]">{date(e.createdAt)}</span></div>
+    {e.photoUrl && <div className="image-frame aspect-[4/3] mt-5"><img src={e.photoUrl} alt={e.photoAlt || `Photo shared by ${e.authorName}`} loading="lazy"/></div>}
+    <p className="font-serif text-xl md:text-2xl leading-snug mt-5">“{e.body}”</p>
+    <div className="mt-auto pt-6"><div className="text-xs text-[#67635b] flex flex-wrap gap-x-3 gap-y-1"><span className="font-bold text-[#26241e]">{e.authorName}</span><span>Bought {e.purchasedSize}</span>{e.usualSize && <span>Usually {e.usualSize}</span>}{e.height && <span>{e.height}</span>}</div><div className="flex justify-between items-center border-t border-[#e5ded2] mt-4 pt-4"><span className="text-[11px] uppercase tracking-wider font-semibold text-[#776f61]">Fit: {e.fit.replaceAll('-', ' ')}</span><button data-testid={`button-helpful-${e.id}`} aria-pressed={active} onClick={() => toggleHelpful(e.id)} className={`flex items-center gap-1.5 text-xs font-bold ${active ? 'text-[#2352a4]' : 'text-[#55544f]'} hover:text-[#2352a4]`}><Heart size={15} fill={active ? 'currentColor' : 'none'}/> That helped · {e.helpfulCount + (active ? 1 : 0)}</button></div></div>
+  </article>;
+}
+function QuestionCard({ question: q }: { question: ProductQuestion }) {
+  const { helpful, toggleHelpful } = useDemo();
+  return <article className="border-t border-[#dcd4c8] py-6 md:py-8" data-testid={`card-question-${q.id}`}><div className="flex gap-3"><span className="w-8 h-8 rounded-full bg-[#e8d9bd] shrink-0 grid place-items-center text-xs font-bold">{q.askerName.charAt(0)}</span><div className="min-w-0 flex-1"><div className="flex justify-between gap-3 text-xs"><span className="font-bold">{q.askerName} asked</span><span className="text-[#777369]">{date(q.createdAt)}</span></div><p className="text-base font-semibold mt-2">{q.body}</p>{q.answers.map(a => <div key={a.id} className="bg-[#eee8dc] p-4 mt-4"><div className="flex flex-wrap items-center gap-2 text-xs"><strong>{a.authorName}</strong>{a.verifiedOwner && <span className="text-[#2352a4] font-bold inline-flex items-center gap-1"><ShieldCheck size={13}/> Verified owner</span>}</div><p className="text-sm leading-relaxed mt-2">{a.body}</p><button data-testid={`button-helpful-answer-${a.id}`} onClick={() => toggleHelpful(a.id)} aria-pressed={helpful.includes(a.id)} className={`text-xs flex items-center gap-1.5 mt-3 font-bold ${helpful.includes(a.id) ? 'text-[#2352a4]' : 'text-[#6f6c64]'}`}><Heart size={13} fill={helpful.includes(a.id) ? 'currentColor' : 'none'}/> That helped · {a.helpfulCount + (helpful.includes(a.id) ? 1 : 0)}</button></div>)}</div></div></article>;
+}
+function PromiseStrip() { return <div className="bg-[#f2e2af] py-7 md:py-9"><div className="container-wide flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left"><p className="font-serif font-semibold text-xl md:text-[27px] tracking-tight">We talk about the clothes. We don’t judge the person wearing them.</p><Link href="/community" data-testid="link-promise-community" className="line-link whitespace-nowrap">This is our promise <ArrowRight size={15}/></Link></div></div>; }
+
+function HomePage() {
+  const q = useGetCurvyRailsHome({ query: { queryKey: getGetCurvyRailsHomeQueryKey() } });
+  if (q.isLoading) return <Loading/>;
+  if (q.isError || !q.data) return <ErrorState retry={() => q.refetch()}/>;
+  const { justLanded, experiences, questions, summary } = q.data;
+  return <div className="fade-in">
+    <section className="bg-[#e9e1d3] overflow-hidden"><div className="grid lg:grid-cols-[48%_52%] min-h-[650px] lg:min-h-[675px]"><div className="order-2 lg:order-1 px-5 md:px-12 xl:pl-[max(5vw,50px)] py-12 md:py-20 flex flex-col justify-center relative"><p className="eyebrow text-[#2352a4] mb-6">Your kind of clothing shop</p><h1 className="display text-[clamp(4rem,7.4vw,8.5rem)] max-w-3xl">CLOTHES.<br/>IN YOUR<br/><span className="text-[#2352a4]">SIZE.</span></h1><p className="font-serif text-2xl md:text-3xl mt-7 tracking-tight">What a revolutionary idea.</p><p className="text-sm md:text-base text-[#5e5a52] max-w-md mt-5 leading-relaxed">Good clothes. Honest fit notes. People who'll tell you what a sleeve actually feels like. Pull up a place at the rail.</p><div className="flex flex-wrap gap-3 mt-9"><Link href="/shop" className="btn btn-blue" data-testid="link-hero-shop">Shop the rail <ArrowRight size={16}/></Link><Link href="/community" className="btn btn-outline" data-testid="link-hero-community">Meet the Rails</Link></div><p className="text-[11px] text-[#767168] mt-9 uppercase tracking-[.1em]">Independent British style · Built around real people</p></div><div className="order-1 lg:order-2 h-[390px] md:h-[530px] lg:h-auto relative bg-[#d4c9b6]"><img src="/images/hero-rail.jpg" alt="Friends of different ages and sizes enjoying clothes together on a British street" className="absolute inset-0 w-full h-full object-cover object-center"/><div className="absolute bottom-5 right-5 md:bottom-9 md:right-9 bg-[#f7f3e9] px-4 py-3 rotate-[-3deg] shadow-sm"><span className="font-serif font-bold text-lg md:text-xl">Come as you are.</span></div></div></div></section>
+    <div className="bg-[#2352a4] text-[#f7f1e5] py-4"><div className="container-wide flex flex-wrap items-center justify-center md:justify-between gap-x-5 gap-y-2 text-[11px] md:text-xs font-bold tracking-[.07em] uppercase"><span>Honest fit advice</span><span className="opacity-50">/</span><span>Women & men</span><span className="opacity-50">/</span><span>Real owner experiences</span><span className="opacity-50 hidden md:inline">/</span><span className="hidden md:inline">No body judgement</span></div></div>
+    <section className="container-wide py-20 md:py-28"><SectionHead kicker="Fresh on the rail" title="Just landed." href="/shop/new" action="All new arrivals"/><div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-9 md:gap-6">{justLanded.slice(0,4).map(p => <ProductCard key={p.id} product={p}/>)}</div>{justLanded.length === 0 && <p className="py-12 text-[#6d6a62]">Nothing new today. The rail will be restocked soon.</p>}<Link href="/shop/new" className="line-link sm:hidden mt-9" data-testid="link-all-new-mobile">All new arrivals <ArrowRight size={15}/></Link></section>
+    <section className="bg-[#e8e9e0]"><div className="grid md:grid-cols-2"><div className="image-frame min-h-[370px] md:min-h-[620px]"><img src="/images/community.jpg" alt="Friends sharing clothing advice in an independent shop" loading="lazy"/></div><div className="px-6 md:px-[10%] py-16 md:py-24 flex flex-col justify-center"><p className="eyebrow text-[#2352a4] mb-5">More than a shop</p><h2 className="display text-5xl md:text-[clamp(3.4rem,5vw,6rem)]">The best advice comes from someone who's tried it on.</h2><p className="leading-relaxed text-[#5d605a] mt-7 max-w-lg">This started with conversations on Whatnot. The kind where someone asks “Does it stretch?” and gets a real answer. Now there's a place for all those useful details to live.</p><div className="flex gap-8 md:gap-12 mt-10 pb-9 border-b border-[#bbc0b4]">{[[summary.memberCount,'people on the Rails'],[summary.helpfulCount,'helpful moments']].map(([n,l]) => <div key={l}><strong className="display text-4xl md:text-5xl text-[#2352a4]">{Number(n).toLocaleString('en-GB')}</strong><p className="text-xs mt-2 text-[#60645d]">{l}</p></div>)}</div><Link href="/community" className="line-link self-start mt-9" data-testid="link-story-community">Get to know the Rails <ArrowRight size={15}/></Link></div></div></section>
+    <section className="container-wide py-20 md:py-28"><SectionHead kicker="Worn on the Rails" title="The real-life fit notes." href="/community" action="More real stories"/><div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">{experiences.slice(0,3).map(e => <ExperienceCard key={e.id} experience={e}/>)}</div></section>
+    <PromiseStrip/>
+    <section className="container-narrow py-20 md:py-28 grid md:grid-cols-[.8fr_1.2fr] gap-10 md:gap-24"><div><p className="eyebrow text-[#2352a4] mb-4">Ask the Rails</p><h2 className="display text-5xl md:text-6xl">No silly questions. Just useful answers.</h2><p className="text-[#625f56] leading-relaxed mt-6">Sizing, fabric, pockets, the way it moves. Ask the people who actually own it.</p><Link href="/community" className="line-link mt-8" data-testid="link-questions-community">See the conversations <ArrowRight size={15}/></Link></div><div>{questions.slice(0,2).map(q => <QuestionCard key={q.id} question={q}/>)}</div></section>
+    <section className="bg-[#2352a4] text-[#f9f5eb] py-20 md:py-28 text-center px-5"><p className="eyebrow text-[#e9d393] mb-5">There’s room for you here</p><h2 className="display text-5xl md:text-[clamp(4rem,7vw,7rem)] max-w-4xl mx-auto">Pull up a place at the rail.</h2><p className="mt-6 text-[#e2e7f0] max-w-lg mx-auto">A community for the people who want clothes to feel good, and advice to feel even better.</p><Link href="/join" className="btn btn-cream mt-9" data-testid="link-home-join">Join the Rails <ArrowRight size={16}/></Link></section>
+  </div>;
 }
 
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
+function ShopPage() {
+  const params = useParams<{category?: string}>();
+  const category = ['women','men','new'].includes(params.category || '') ? params.category as 'women'|'men'|'new' : undefined;
+  const [search, setSearch] = useState('');
+  const [size, setSize] = useState('');
+  const [sort, setSort] = useState('featured');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const apiParams: ListCurvyRailsProductsParams = { ...(category ? { category } : {}), ...(search.trim() ? { search: search.trim() } : {}) };
+  const q = useListCurvyRailsProducts(apiParams, { query: { queryKey: getListCurvyRailsProductsQueryKey(apiParams) } });
+  const items = (q.data?.items || []).filter(p => !size || p.sizes.includes(size)).sort((a,b) => sort === 'low' ? a.price-b.price : sort === 'high' ? b.price-a.price : 0);
+  return <div className="fade-in"><div className="bg-[#e8e5da] py-12 md:py-20"><div className="container-wide"><p className="eyebrow text-[#2352a4] mb-4">The good stuff</p><h1 className="display text-6xl md:text-[clamp(5rem,8vw,8rem)]">{category === 'new' ? 'New on the rail.' : category === 'women' ? 'For women.' : category === 'men' ? 'For men.' : 'Shop the rail.'}</h1><p className="mt-5 text-[#625e56] max-w-xl leading-relaxed">Clothes worth wearing, with fit details from people who've actually worn them. Sample catalogue for this demo.</p></div></div>
+    <div className="container-wide pt-8 pb-20"><div className="flex flex-wrap gap-2 mb-8">{[['All clothes','/shop'],['Women','/shop/women'],['Men','/shop/men'],['New in','/shop/new']].map(([label,href]) => <Link key={href} href={href} data-testid={`link-category-${label.toLowerCase().replaceAll(' ','-')}`} className={`chip ${(category ? href.endsWith(category) : href === '/shop') ? 'active' : ''}`}>{label}</Link>)}</div>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-y border-[#dcd4c8] py-5 mb-8"><label className="relative block w-full md:w-[350px]"><Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6a675f]" size={18}/><input data-testid="input-search-products" className="field pl-11" type="search" placeholder="Search clothes, colours, details..." value={search} onChange={e => setSearch(e.target.value)}/></label><div className="flex items-center gap-3"><button data-testid="button-toggle-filters" onClick={() => setFiltersOpen(!filtersOpen)} className="btn btn-outline md:hidden flex-1"><SlidersHorizontal size={16}/> Filters</button><div className="hidden md:flex items-center gap-2"><label htmlFor="size-filter" className="text-xs font-bold">Size</label><select id="size-filter" data-testid="select-size-filter" className="field w-32" value={size} onChange={e => setSize(e.target.value)}><option value="">All sizes</option>{(q.data?.sizes || []).map(s => <option key={s} value={s}>{s}</option>)}</select></div><label htmlFor="sort-filter" className="sr-only">Sort products</label><select id="sort-filter" data-testid="select-sort-products" className="field w-44" value={sort} onChange={e => setSort(e.target.value)}><option value="featured">Featured</option><option value="low">Price: low to high</option><option value="high">Price: high to low</option></select></div></div>
+      {filtersOpen && <div className="md:hidden mb-6 p-5 bg-[#eee7da]"><label htmlFor="size-filter-mobile" className="text-xs font-bold block mb-2">Choose a size</label><select id="size-filter-mobile" data-testid="select-size-filter-mobile" className="field" value={size} onChange={e => setSize(e.target.value)}><option value="">All sizes</option>{(q.data?.sizes || []).map(s => <option key={s} value={s}>{s}</option>)}</select></div>}
+      {q.isLoading ? <Loading/> : q.isError ? <ErrorState retry={() => q.refetch()}/> : <><div className="flex justify-between items-center mb-5"><p data-testid="text-product-count" className="text-xs text-[#6d685e]">{items.length} piece{items.length === 1 ? '' : 's'} on this rail</p>{size && <button data-testid="button-clear-size" onClick={() => setSize('')} className="text-xs underline">Clear size filter</button>}</div>{items.length ? <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-10 md:gap-x-6 md:gap-y-14">{items.map(p => <ProductCard key={p.id} product={p}/>)}</div> : <div className="bg-[#eae5d8] text-center py-20 px-5"><Search size={28} className="mx-auto text-[#2352a4]"/><h2 className="display text-4xl mt-5">Nothing on this rail yet.</h2><p className="text-sm text-[#67635b] mt-3">Try another search or size. Good things might be one filter away.</p><button data-testid="button-reset-filters" onClick={() => { setSearch(''); setSize(''); }} className="btn btn-blue mt-6">Clear filters</button></div>}</>}
+    </div></div>;
 }
 
+function ProductPage() {
+  const { slug = '' } = useParams<{slug: string}>();
+  const q = useGetCurvyRailsProduct(slug, { query: { queryKey: getGetCurvyRailsProductQueryKey(slug), enabled: !!slug } });
+  const [size, setSize] = useState('');
+  const [tab, setTab] = useState<'experiences'|'questions'>('experiences');
+  const { add } = useDemo();
+  if (q.isLoading) return <Loading/>;
+  if (q.isError || !q.data) return <ErrorState retry={() => q.refetch()}/>;
+  const { product: p, experiences, questions, relatedProducts } = q.data;
+  return <div className="fade-in"><div className="container-wide py-5 text-xs text-[#77736a] flex gap-2"><Link href="/shop" className="hover:underline" data-testid="link-product-back-shop">Shop</Link><span>/</span><span>{p.name}</span></div><div className="container-wide grid md:grid-cols-[1fr_.85fr] gap-8 md:gap-12 lg:gap-20 pb-16"><div><div className="image-frame aspect-[4/5] md:aspect-[4/5]"><img src={p.imageUrl} alt={p.imageAlt}/></div><div className="grid grid-cols-2 gap-3 mt-3"><div className="bg-[#e6e1d4] p-6 md:p-9 flex flex-col justify-center"><span className="eyebrow text-[#2352a4]">From the Rails</span><p className="font-serif text-lg md:text-2xl mt-4 leading-snug">“The little details make all the difference.”</p></div><div className="image-frame aspect-square"><img src="/images/details.jpg" alt="Real customer adjusting a garment in a changing room" loading="lazy"/></div></div></div><div className="md:pt-8"><p className="eyebrow text-[#2352a4] mb-5">{p.category} · {p.colour} {p.isNew && '· Just landed'}</p><h1 data-testid="text-product-name" className="display text-5xl md:text-[clamp(3.3rem,5vw,6rem)]">{p.name}</h1><div className="flex gap-3 items-center mt-5"><strong data-testid="text-product-price" className="text-xl">{money(p.price)}</strong>{p.compareAtPrice && <span className="line-through text-[#837e73]">{money(p.compareAtPrice)}</span>}</div><p className="text-[#5f5c54] leading-relaxed mt-7 pb-7 border-b border-[#dcd4c8]">{p.description}</p><div className="py-7 border-b border-[#dcd4c8]"><div className="flex justify-between items-center mb-4"><span className="text-sm font-bold">Choose your size</span><span className="text-xs text-[#726e65]">Size is just a number.</span></div><div className="flex flex-wrap gap-2">{p.sizes.map(s => <button data-testid={`button-size-${s}`} aria-pressed={size === s} key={s} onClick={() => setSize(s)} className={`chip min-w-[52px] ${size === s ? 'active' : ''}`}>{s}</button>)}</div><p className="mt-4 text-xs leading-relaxed text-[#625f56]"><strong>Fit note:</strong> {p.sizeNote}</p></div><button data-testid="button-add-to-bag" disabled={!size || p.stock <= 0} onClick={() => add(p,size)} className="btn btn-blue w-full mt-7">{p.stock <= 0 ? 'Out of stock' : size ? 'Add to demo bag' : 'Choose a size first'} <ShoppingBag size={17}/></button><p className="text-center text-[11px] text-[#777168] mt-3">Demo only. No checkout or payment is available.</p><div className="mt-10 bg-[#ebe8df] p-5 flex gap-3"><MessageCircle size={20} className="text-[#2352a4] shrink-0"/><div><strong className="text-sm">Wondering how it really fits?</strong><p className="text-xs text-[#656158] leading-relaxed mt-1">{p.verifiedOwnerCount} verified owners have shared their experience. Read their notes below before you decide.</p><a href="#from-the-rails" data-testid="link-product-fit-notes" className="text-xs font-bold text-[#2352a4] underline underline-offset-4 inline-block mt-3">Read the fit notes</a></div></div></div></div>
+    <section id="from-the-rails" className="bg-[#eae7dc] py-16 md:py-24"><div className="container-narrow"><p className="eyebrow text-[#2352a4] mb-3">The useful bit</p><h2 className="display text-5xl md:text-7xl">From the Rails.</h2><p className="text-[#66625b] mt-5 max-w-xl">Real owners, real questions, real answers. We talk about the clothes, not the bodies wearing them.</p><div className="flex gap-7 border-b border-[#c9c3b8] mt-10 mb-8"><button data-testid="button-tab-experiences" onClick={() => setTab('experiences')} className={`pb-4 text-sm font-bold border-b-2 ${tab === 'experiences' ? 'border-[#2352a4] text-[#2352a4]' : 'border-transparent'}`}>Worn on the Rails ({experiences.length})</button><button data-testid="button-tab-questions" onClick={() => setTab('questions')} className={`pb-4 text-sm font-bold border-b-2 ${tab === 'questions' ? 'border-[#2352a4] text-[#2352a4]' : 'border-transparent'}`}>Ask the Rails ({questions.length})</button></div>{tab === 'experiences' ? experiences.length ? <div className="grid md:grid-cols-2 gap-4">{experiences.map(e => <ExperienceCard key={e.id} experience={e}/>)}</div> : <p className="py-10">No owner notes for this piece yet.</p> : questions.length ? <div>{questions.map(question => <QuestionCard key={question.id} question={question}/>)}</div> : <p className="py-10">No questions yet for this piece.</p>}<div className="border border-[#b9b4aa] p-5 mt-8 text-xs text-[#625f57]">Sharing a new experience or question needs a real account, which isn't available in this demo. You can explore the sample conversations above.</div></div></section>
+    {relatedProducts.length > 0 && <section className="container-wide py-20"><SectionHead kicker="Keep looking" title="You might also like." href="/shop" action="Shop all"/><div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">{relatedProducts.slice(0,4).map(p => <ProductCard key={p.id} product={p}/>)}</div></section>}</div>;
+}
+
+function CommunityPage() {
+  const q = useGetCurvyRailsCommunity({ query: { queryKey: getGetCurvyRailsCommunityQueryKey() } });
+  if (q.isLoading) return <Loading/>;
+  if (q.isError || !q.data) return <ErrorState retry={() => q.refetch()}/>;
+  const { summary, experiences, questions } = q.data;
+  return <div className="fade-in"><section className="grid md:grid-cols-2 bg-[#e5e8e0]"><div className="px-5 md:px-[max(6vw,40px)] py-16 md:py-24 flex flex-col justify-center"><p className="eyebrow text-[#2352a4] mb-5">The Curvy Rails community</p><h1 className="display text-6xl md:text-[clamp(4.8rem,7vw,8rem)]">You're in good company.</h1><p className="font-serif text-2xl mt-7">Real clothes. Real people. Real help.</p><p className="text-[#5e625b] leading-relaxed mt-5 max-w-lg">A space shaped by real conversations on Whatnot. Share the detail you wish you'd known. Ask the thing you're wondering. Help somebody else find their fit.</p><Link href="/join" className="btn btn-blue self-start mt-9" data-testid="link-community-join">Join the Rails <ArrowRight size={16}/></Link></div><div className="image-frame h-[380px] md:h-[640px]"><img src="/images/community.jpg" alt="Two women sharing honest clothing advice in a shop"/></div></section>
+    <PromiseStrip/>
+    <section className="container-wide py-20 md:py-28"><div className="grid md:grid-cols-[1.1fr_.9fr] gap-10 md:gap-24 items-end"><div><p className="eyebrow text-[#2352a4] mb-4">How we show up</p><h2 className="display text-5xl md:text-7xl">Kindness is the dress code.</h2></div><p className="text-[#625f56] leading-relaxed max-w-lg">Talk about the fabric, the shape, the fit and how it wears. Leave assumptions about people's bodies at the door. Every useful answer makes shopping a little easier for someone else.</p></div><div className="grid md:grid-cols-3 border-y border-[#d6cec1] mt-12">{[['01','Share what you know','Honest notes from wearing it out in the world.'],['02','Ask what you need','No question is too small when it helps you choose.'],['03','Pass it on','Tap “That helped” when someone makes your day easier.']].map(([n,t,d]) => <div key={n} className="py-8 md:px-8 first:pl-0 border-b md:border-b-0 md:border-r last:border-0 border-[#d6cec1]"><span className="text-xs font-bold text-[#2352a4]">{n}</span><h3 className="font-serif text-2xl font-bold mt-5">{t}</h3><p className="text-sm text-[#66625a] mt-3 leading-relaxed">{d}</p></div>)}</div></section>
+    <section className="bg-[#e8e5da] py-20 md:py-28"><div className="container-wide"><SectionHead kicker={`${summary.experienceCount} shared experiences`} title="Worn on the Rails."/><div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">{experiences.map(e => <ExperienceCard key={e.id} experience={e}/>)}</div>{!experiences.length && <p>No shared experiences in this sample yet.</p>}</div></section>
+    <section className="container-narrow py-20 md:py-28 grid md:grid-cols-[.75fr_1.25fr] gap-12 md:gap-20"><div><p className="eyebrow text-[#2352a4] mb-4">{summary.questionCount} conversations</p><h2 className="display text-5xl md:text-6xl">Ask the Rails.</h2><p className="text-[#625f56] leading-relaxed mt-6">The questions we all have, answered by people who've actually worn the clothes.</p></div><div>{questions.map(q => <QuestionCard key={q.id} question={q}/>)}</div></section><section className="bg-[#2352a4] text-[#f9f5eb] py-16 text-center px-5"><p className="eyebrow text-[#f0d486]">Rail Stars</p><h2 className="display text-5xl mt-4">Good advice deserves its flowers.</h2><p className="max-w-lg mx-auto text-sm text-[#dce4f1] mt-5">The sample Rails have given {summary.helpfulCount.toLocaleString('en-GB')} helpful nods so far. In a real community, every useful contribution counts.</p></section></div>;
+}
+
+function JoinPage() {
+  const [mode, setMode] = useState<'join'|'login'>('join');
+  return <div className="grid md:grid-cols-2 min-h-[720px]"><div className="bg-[#2352a4] text-[#f9f5e8] px-6 md:px-[max(6vw,40px)] py-16 md:py-24 flex flex-col justify-between"><div><p className="eyebrow text-[#eed48a] mb-5">The community is the point</p><h1 className="display text-6xl md:text-[clamp(4.8rem,7vw,8rem)]">Come on in.<br/>There's room.</h1><p className="text-[#e0e6ee] leading-relaxed mt-8 max-w-md">A place to remember what you loved, ask what you need and pass along what you learned. No perfect fit required. Just you.</p></div><p className="font-serif text-2xl mt-16">“We talk about the clothes. We don’t judge the person wearing them.”</p></div><div className="px-6 md:px-[max(6vw,40px)] py-16 md:py-24 flex flex-col justify-center"><div className="max-w-md w-full mx-auto"><div className="bg-[#f3e4b3] p-4 flex gap-3 text-sm leading-relaxed mb-9"><LockKeyhole size={19} className="shrink-0 mt-0.5"/><p><strong>Preview only.</strong> Joining and signing in aren't available in this demo. No account is created and no details are sent.</p></div><p className="eyebrow text-[#2352a4] mb-3">Your place on the Rails</p><h2 className="display text-5xl">{mode === 'join' ? 'Join the Rails.' : 'Welcome back.'}</h2><div className="flex border-b border-[#d8d0c3] mt-9 mb-8"><button data-testid="button-mode-join" onClick={() => setMode('join')} className={`py-3 px-5 text-sm font-bold border-b-2 ${mode === 'join' ? 'border-[#2352a4] text-[#2352a4]' : 'border-transparent'}`}>Join</button><button data-testid="button-mode-login" onClick={() => setMode('login')} className={`py-3 px-5 text-sm font-bold border-b-2 ${mode === 'login' ? 'border-[#2352a4] text-[#2352a4]' : 'border-transparent'}`}>Sign in</button></div><div className="space-y-5 opacity-65">{mode === 'join' && <label className="block text-xs font-bold">Your name<input className="field mt-2" data-testid="input-join-name" type="text" placeholder="Your name" disabled/></label>}<label className="block text-xs font-bold">Email address<input className="field mt-2" data-testid="input-join-email" type="email" placeholder="you@example.co.uk" disabled/></label><label className="block text-xs font-bold">Password<input className="field mt-2" data-testid="input-join-password" type="password" placeholder="At least 8 characters" disabled/></label></div><button disabled data-testid="button-submit-join" className="btn btn-blue w-full mt-7">{mode === 'join' ? 'Create account unavailable in demo' : 'Sign in unavailable in demo'}</button><p className="text-xs text-[#777168] mt-4">Want to explore? <Link href="/my-rail" data-testid="link-join-sample" className="underline text-[#2352a4] font-bold">View a sample My Rail</Link> — no sign-in needed.</p></div></div></div>;
+}
+
+function MyRailPage() {
+  const q = useGetCurvyRailsMyRail({ query: { queryKey: getGetCurvyRailsMyRailQueryKey() } });
+  if (q.isLoading) return <Loading/>;
+  if (q.isError || !q.data) return <ErrorState retry={() => q.refetch()}/>;
+  const { customer, orders, ownedProducts, activity, wallet } = q.data;
+  return <div className="fade-in"><div className="bg-[#e7e5d9] py-14 md:py-20"><div className="container-wide"><p className="eyebrow text-[#2352a4] mb-4">Read-only sample account · no identity access</p><h1 className="display text-6xl md:text-8xl">My Rail.</h1><p className="text-lg mt-5">A look at what your own corner of the Rails could feel like.</p><p className="text-sm text-[#6b675f] mt-2">This is fictional demo data for {customer.firstName} {customer.lastName}. It isn't your account or order history.</p></div></div><div className="container-wide py-12 md:py-20"><div className="grid lg:grid-cols-[1fr_320px] gap-10"><div className="space-y-14"><section><SectionHead kicker="Your sample dashboard" title={`Hello, ${customer.firstName}.`}/><div className="grid sm:grid-cols-2 gap-4"><div className="card-surface p-7"><Package className="text-[#2352a4]" size={23}/><p className="display text-5xl mt-5">{orders.length}</p><p className="text-sm mt-2">sample orders</p></div><div className="card-surface p-7"><Star className="text-[#2352a4]" size={23}/><p className="display text-5xl mt-5">{wallet.currentStars}</p><p className="text-sm mt-2">sample Rail Stars</p></div></div></section><section><SectionHead kicker="A little history" title="Sample orders."/><div className="border-t border-[#d6cec1]">{orders.map(order => <div key={order.id} data-testid={`row-order-${order.id}`} className="py-5 border-b border-[#d6cec1] flex flex-col sm:flex-row justify-between gap-3"><div><strong className="text-sm">{order.id}</strong><p className="text-xs text-[#6c685e] mt-1">{date(order.date)} · {order.items.map(i => `${i.productName} (${i.size})`).join(', ')}</p></div><div className="sm:text-right"><span className="text-xs px-2 py-1 bg-[#e8e2d4]">{order.status}</span><p className="text-sm font-bold mt-2">{money(order.total)}</p></div></div>)}{orders.length === 0 && <p className="py-7 text-sm">No sample orders to show.</p>}</div></section><section><SectionHead kicker="The pieces you know" title="Owned pieces."/><div className="grid grid-cols-2 md:grid-cols-3 gap-4">{ownedProducts.map(p => <ProductCard key={p.id} product={p}/>)}</div></section><section><SectionHead kicker="Your contributions" title="On the Rails."/><div className="border-t border-[#d6cec1]">{activity.map(a => <div key={a.id} className="border-b border-[#d6cec1] py-5 flex justify-between gap-4 text-sm"><div><p className="font-semibold">{a.description}</p><span className="text-xs text-[#777168]">{date(a.date)}</span></div><span className="text-[#2352a4] font-bold shrink-0">+{a.stars} stars</span></div>)}</div></section></div><aside className="space-y-5"><div className="bg-[#2352a4] text-[#f8f4e9] p-7"><p className="eyebrow text-[#f0d486]">Rail Stars · sample wallet</p><strong className="display text-6xl block mt-6">{wallet.currentStars}</strong><p className="text-xs mt-2">stars in this sample wallet</p><div className="border-t border-[#7694c5] mt-7 pt-5 grid gap-3 text-sm"><div className="flex justify-between"><span>Earned</span><strong>{wallet.earnedStars}</strong></div><div className="flex justify-between"><span>Redeemed</span><strong>{wallet.redeemedStars}</strong></div><div className="flex justify-between"><span>Pending</span><strong>{wallet.pendingStars}</strong></div><div className="flex justify-between border-t border-[#7694c5] pt-3"><span>Available credit</span><strong>{money(wallet.availableCredit)}</strong></div></div><p className="text-[11px] text-[#d9e3f2] mt-7">Illustrative only. Stars and credit cannot be used in this demo.</p></div><div className="card-surface p-6"><p className="eyebrow text-[#2352a4]">A note</p><p className="text-sm leading-relaxed mt-3">This preview is view-only. Sign-in, editing your profile and redeeming rewards are not connected.</p><Link href="/shop" data-testid="link-my-rail-shop" className="line-link mt-5">Browse clothes <ArrowRight size={15}/></Link></div></aside></div></div></div>;
+}
+
+function AdminPage() {
+  const q = useGetCurvyRailsAdminOverview({ query: { queryKey: getGetCurvyRailsAdminOverviewQueryKey() } });
+  if (q.isLoading) return <Loading/>;
+  if (q.isError || !q.data) return <ErrorState retry={() => q.refetch()}/>;
+  const { metrics: m, moderationQueue } = q.data;
+  const stats: [string, string][] = [['Sample orders',m.orders.toLocaleString('en-GB')],['Sample revenue',money(m.revenue)],['Customers',m.customers.toLocaleString('en-GB')],['New members',m.newMembers.toLocaleString('en-GB')],['Experiences',m.experiences.toLocaleString('en-GB')],['Questions',m.questions.toLocaleString('en-GB')],['Helpful interactions',m.helpfulInteractions.toLocaleString('en-GB')],['Shared photos',m.photos.toLocaleString('en-GB')],['Stars issued',m.starsIssued.toLocaleString('en-GB')],['Stars redeemed',m.starsRedeemed.toLocaleString('en-GB')]];
+  return <div className="fade-in"><div className="bg-[#e6e4d8] py-14 md:py-20"><div className="container-wide"><p className="eyebrow text-[#2352a4] mb-4">Operations preview · view only</p><h1 className="display text-6xl md:text-8xl">Behind the rail.</h1><p className="text-sm text-[#645f56] mt-6 max-w-2xl">A fictional admin foundation showing sample shop and community signals. This is public demo data, not a protected admin session. Nothing can be moderated or changed here.</p></div></div><div className="container-wide py-14 md:py-20"><SectionHead kicker="At a glance" title="The sample numbers."/><div className="grid grid-cols-2 md:grid-cols-5 border-l border-t border-[#d6cec1]">{stats.map(([label,value]) => <div key={label} className="border-r border-b border-[#d6cec1] p-5 md:p-7 min-h-32"><p className="text-xs text-[#69655d]">{label}</p><strong className="display text-3xl md:text-4xl block mt-5" data-testid={`text-metric-${label.toLowerCase().replaceAll(' ','-')}`}>{value}</strong></div>)}</div><div className="mt-20 grid lg:grid-cols-[.65fr_1.35fr] gap-12"><div><p className="eyebrow text-[#2352a4] mb-4">Care comes first</p><h2 className="display text-5xl md:text-6xl">Community moderation.</h2><p className="text-sm text-[#68645b] mt-5 leading-relaxed">A healthy rail stays welcoming because people look after it. These are sample queue items; review actions are deliberately unavailable.</p></div><div><div className="flex justify-between gap-4 border-b border-[#d6cec1] pb-4"><strong className="text-sm">Sample moderation queue</strong><span className="text-xs text-[#716c64]">{moderationQueue.length} items</span></div>{moderationQueue.map(item => <div key={item.id} data-testid={`row-moderation-${item.id}`} className="border-b border-[#d6cec1] py-5 flex flex-col sm:flex-row justify-between gap-3"><div><span className="eyebrow text-[#2352a4]">{item.type}</span><p className="font-semibold text-sm mt-2">{item.summary}</p><p className="text-xs text-[#716c64] mt-2">{date(item.reportedAt)} · {item.id}</p></div><span className="self-start text-xs font-bold px-3 py-1.5 bg-[#e8dfc9] capitalize">{item.status}</span></div>)}{!moderationQueue.length && <div className="py-10 text-sm text-[#68645b]">No sample items are waiting in the queue.</div>}<p className="text-xs text-[#746f65] mt-5">Read-only preview. Approve, reject and reporting actions need a secure real admin system.</p></div></div></div></div>;
+}
+
+function BagPage() {
+  const { bag, change } = useDemo();
+  const total = bag.reduce((n,i) => n + i.product.price * i.quantity, 0);
+  return <div className="container-wide py-12 md:py-20 fade-in"><p className="eyebrow text-[#2352a4] mb-4">Your picks · this session only</p><h1 className="display text-6xl md:text-8xl">Your bag.</h1><p className="text-sm text-[#6c675d] mt-5">This is a temporary demo bag. It isn't saved, and checkout or payment isn't available.</p>{bag.length === 0 ? <div className="bg-[#eae5d9] text-center py-20 md:py-28 mt-12"><ShoppingBag size={37} strokeWidth={1.3} className="mx-auto text-[#2352a4]"/><h2 className="display text-4xl md:text-5xl mt-7">Nothing in here. Yet.</h2><p className="text-sm text-[#68645b] mt-4">There's plenty to have a look at on the rail.</p><Link href="/shop" data-testid="link-bag-shop" className="btn btn-blue mt-7">Explore the shop <ArrowRight size={16}/></Link></div> : <div className="grid lg:grid-cols-[1fr_340px] gap-10 lg:gap-20 mt-12"><div><div className="border-t border-[#d5cdc1]">{bag.map(i => <div key={`${i.product.slug}-${i.size}`} data-testid={`row-bag-${i.product.slug}-${i.size}`} className="border-b border-[#d5cdc1] py-5 flex gap-5"><Link href={`/product/${i.product.slug}`} className="image-frame w-24 md:w-32 aspect-[3/4] shrink-0"><img src={i.product.imageUrl} alt={i.product.imageAlt}/></Link><div className="flex-1 flex flex-col justify-between min-w-0"><div><Link href={`/product/${i.product.slug}`} className="font-serif font-bold text-lg hover:text-[#2352a4]">{i.product.name}</Link><p className="text-xs text-[#716c63] mt-1">{i.product.colour} · Size {i.size}</p><p className="text-sm font-bold mt-2">{money(i.product.price)}</p></div><div className="flex justify-between items-end gap-3 mt-3"><div className="flex border border-[#c9c1b5] items-center"><button data-testid={`button-decrease-${i.product.slug}-${i.size}`} onClick={() => change(i.product.slug,i.size,-1)} className="p-2" aria-label={`Decrease ${i.product.name} quantity`}><Minus size={14}/></button><span className="px-2 text-sm">{i.quantity}</span><button data-testid={`button-increase-${i.product.slug}-${i.size}`} onClick={() => change(i.product.slug,i.size,1)} className="p-2" aria-label={`Increase ${i.product.name} quantity`}><Plus size={14}/></button></div><button data-testid={`button-remove-${i.product.slug}-${i.size}`} onClick={() => change(i.product.slug,i.size,-i.quantity)} className="text-xs text-[#79645f] inline-flex gap-1 items-center hover:text-[#aa4236]"><Trash2 size={13}/> Remove</button></div></div></div>)}</div><Link href="/shop" data-testid="link-continue-shopping" className="line-link mt-8"><ArrowLeft size={15}/> Keep browsing</Link></div><aside className="bg-[#eae5d9] p-7 h-fit"><h2 className="font-serif font-bold text-2xl">The little tally</h2><div className="flex justify-between text-sm border-t border-b border-[#cfc5b7] py-5 mt-5"><span>Subtotal</span><strong>{money(total)}</strong></div><p className="text-xs leading-relaxed text-[#69645b] mt-5">This is an illustration only. Shipping, discounts, taxes and a final total are not calculated in this demo.</p><button disabled data-testid="button-checkout-disabled" className="btn btn-blue w-full mt-6">Checkout unavailable in demo <LockKeyhole size={15}/></button><p className="text-[11px] text-[#767067] text-center mt-3">No payment or order can be made.</p></aside></div>}</div>;
+}
+function NotFound() { return <div className="container-narrow py-28 md:py-40 text-center"><p className="eyebrow text-[#2352a4]">404 · Wrong turn</p><h1 className="display text-6xl md:text-8xl mt-5">Not on this rail.</h1><p className="text-[#68645b] mt-6">This page isn't here, but there's plenty else to see.</p><Link href="/" className="btn btn-blue mt-8" data-testid="link-404-home">Back to the beginning <ArrowRight size={16}/></Link></div>; }
+function PageMetadata() {
+  const [location] = useLocation();
+  useEffect(() => {
+    const productName = location.startsWith('/product/')
+      ? decodeURIComponent(location.split('/')[2] || '').replaceAll('-', ' ')
+      : '';
+    const details: Record<string, [string, string]> = {
+      '/': ['Curvy Rails', 'Real clothes. Real people. Real help. Explore an independent clothing shop and a community sharing honest fit advice.'],
+      '/shop': ['Shop the Rail', 'Browse the Curvy Rails demo collection of comfortable, everyday clothing for women and men.'],
+      '/shop/women': ['Shop Women', 'Discover womenswear and honest fit notes from the Curvy Rails community.'],
+      '/shop/men': ['Shop Men', 'Discover menswear and honest fit notes from the Curvy Rails community.'],
+      '/shop/new': ['Just Landed', 'See what is new on the Curvy Rails demo rail.'],
+      '/community': ['The Community', 'A judgement-free rail where people share useful advice about the clothes, not the people wearing them.'],
+      '/join': ['Join the Rails', 'Preview the Curvy Rails community registration experience. Accounts are not available in this demo.'],
+      '/my-rail': ['My Rail Preview', 'Explore a fictional sample account, orders, community activity and Rail Stars.'],
+      '/admin': ['Admin Preview', 'View fictional Curvy Rails admin metrics and moderation examples.'],
+      '/bag': ['Your Demo Bag', 'View the items in your temporary demo bag. Checkout is not available.'],
+    };
+    const [title, description] = productName
+      ? [`${productName.replace(/\b\w/g, letter => letter.toUpperCase())} · Demo Product`, 'Explore a Curvy Rails demo product, fit experiences and answers from verified-owner examples.']
+      : details[location] || ['Page Not Found', 'That page is not on the Curvy Rails demo rail.'];
+    const pageTitle = title === 'Curvy Rails' ? title : `${title} | Curvy Rails`;
+    document.title = pageTitle;
+    for (const [selector, value] of [
+      ['meta[name="description"]', description],
+      ['meta[property="og:title"]', pageTitle],
+      ['meta[property="og:description"]', description],
+      ['meta[name="twitter:title"]', pageTitle],
+      ['meta[name="twitter:description"]', description],
+    ]) document.querySelector(selector)?.setAttribute('content', value);
+  }, [location]);
+  return null;
+}
+function Router() { return <Shell><PageMetadata/><Switch><Route path="/" component={HomePage}/><Route path="/shop" component={ShopPage}/><Route path="/shop/:category" component={ShopPage}/><Route path="/product/:slug" component={ProductPage}/><Route path="/community" component={CommunityPage}/><Route path="/join" component={JoinPage}/><Route path="/my-rail" component={MyRailPage}/><Route path="/admin" component={AdminPage}/><Route path="/bag" component={BagPage}/><Route component={NotFound}/></Switch></Shell>; }
+function App() { return <QueryClientProvider client={queryClient}><DemoProvider><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><Router/></WouterRouter></DemoProvider></QueryClientProvider>; }
 export default App;
