@@ -1,0 +1,18 @@
+packages:
+  "lucide-react": "Standard application icons"
+  "recharts": "Dashboard analytics charts"
+  "date-fns": "Human-readable date formatting"
+  "react-hook-form": "Form state management"
+  "@hookform/resolvers": "Zod validation resolver for forms"
+  "zod": "Schema validation for forms"
+  "clsx": "Class utility"
+  "tailwind-merge": "Class utility"
+
+images:
+  - path: "artifacts/order-system/public/images/logo.png"
+    description: "Minimal modern geometric abstract logo mark in deep blue and indigo on transparent background, suitable for a professional business application"
+    aspect_ratio: "1:1"
+
+notes:
+  - Assumes UI components (shadcn) exist in src/components/ui
+  - Uses @workspace/api-client-react for TanStack Query hooks

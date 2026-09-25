@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/order-system/"
+title = "Curvy Rails Order System"
+description = "Imported staff order-management application from the sanitized source, with isolated first-run setup."
+version = "1.0.0"
+id = "artifacts/order-system"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/order-system/" ]
+localPort = 19265
+
+[services.development]
+run = "pnpm --filter @workspace/order-system run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/order-system", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/order-system/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19265"
+BASE_PATH = "/order-system/"

@@ -1,0 +1,131 @@
+I have uploaded a ZIP file to this project.
+
+This ZIP contains a sanitised, source-only version of an existing application that I want to use as the new application for **this Curvy-Rails project**.
+
+Please inspect the ZIP and read `IMPORT-README.md` before making changes.
+
+## Objective
+
+Install the application contained in the ZIP into the **root of this Curvy-Rails project** and make it operational as a completely independent fresh installation.
+
+The ZIP is now the authoritative application source.
+
+I do NOT want you to recreate, redesign or reinterpret the application.
+
+I want the application in the ZIP installed here.
+
+## Before changing files
+
+1. Create/checkpoint the current Curvy-Rails state so we can roll back if necessary.
+2. Inspect the ZIP contents.
+3. Read `IMPORT-README.md`.
+4. Review any filename conflicts with the existing Curvy-Rails project.
+5. If the existing project contains only placeholder/default Replit files, the imported application can replace them.
+6. Do not overwrite anything important without identifying the conflict first.
+
+## Installation
+
+Extract the appropriate contents of the ZIP into the Curvy-Rails project root.
+
+Preserve the application structure contained in the archive, including:
+
+* all four application packages
+* frontend
+* backend/API
+* database schema
+* migrations
+* blank database bootstrap
+* first-run setup
+* assets
+* scripts
+* package files
+* configuration templates
+* service configuration
+* installation documentation
+
+Follow `IMPORT-README.md` for the intended service routes and setup.
+
+## CRITICAL — COMPLETE ISOLATION
+
+This installation must be completely independent from the application it was originally derived from.
+
+Curvy-Rails must have its OWN:
+
+* database
+* storage
+* secrets
+* administrator account
+* business configuration
+* Stripe configuration
+* email configuration
+* API credentials
+* OAuth credentials
+* webhooks
+* scheduled jobs
+* external integrations
+* Replit service/deployment configuration
+
+Do not attempt to discover, restore, copy or reconnect to credentials or resources belonging to the original application.
+
+If a required configuration value is missing, leave that integration disabled and tell me what needs configuring.
+
+**Never fall back to the original application's database, storage, URLs, APIs or integrations.**
+
+## Database
+
+Create a completely fresh database for Curvy-Rails using the blank schema/migrations supplied in the ZIP.
+
+Do NOT import data from another application.
+
+Do NOT attempt to find an existing production database.
+
+Run the supplied blank bootstrap/migrations against Curvy-Rails' own database only.
+
+## External services
+
+Keep integrations disabled until Curvy-Rails has its own credentials.
+
+Do not send:
+
+* real emails
+* real Stripe transactions
+* webhooks
+* external API requests
+* scheduled outbound jobs
+
+during installation/testing unless I explicitly approve them.
+
+Mocks/local testing can be used where appropriate.
+
+## First-run setup
+
+Once the application is installed and running, take me through the supplied first-run process so I can configure:
+
+* administrator
+* business identity
+* branding
+* contact details
+* integrations where required
+
+## Verification
+
+After installation, verify:
+
+1. The application builds.
+2. All required services start.
+3. The fresh database initialises correctly.
+4. First-run setup works.
+5. Administrator login works.
+6. The main application/portal loads.
+7. No operational/customer data exists.
+8. Integrations are disabled/unconfigured.
+9. Scheduled jobs cannot accidentally contact external services.
+10. There are no connections or references to the original application's live resources.
+
+Do not redesign or improve the application during this stage.
+
+The objective is simply:
+
+**ZIP → Curvy-Rails → fresh database → first-run setup → independent working copy.**
+
+Continue until the installation is operational, unless you encounter a genuine blocker requiring information or credentials from me.

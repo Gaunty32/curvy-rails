@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <title>Customer Portal</title>
+    <meta name="description" content="Customer portal — place and manage your orders." />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="manifest" href="./manifest.json" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Customer Portal" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <!-- Optional installation-owned live chat; disabled unless public config explicitly enables it. -->
+    <script>
+      if (new URLSearchParams(window.location.search).get("suspended") !== "1") {
+        fetch("/api/public-config", { credentials: "same-origin", cache: "no-store" })
+          .then((response) => response.ok ? response.json() : null)
+          .then((config) => {
+            const chat = config?.widgets?.leadConnectorChat;
+            if (!chat || typeof chat.widgetId !== "string" || !chat.widgetId.trim()
+              || typeof chat.locationId !== "string" || !chat.locationId.trim()) return;
+
+            const chatRoot = document.createElement("div");
+            chatRoot.dataset.chatWidget = "";
+            chatRoot.dataset.widgetId = chat.widgetId;
+            chatRoot.dataset.locationId = chat.locationId;
+            document.body.appendChild(chatRoot);
+
+            const chatScript = document.createElement("script");
+            chatScript.src = "https://widgets.leadconnectorhq.com/loader.js";
+            chatScript.dataset.resourcesUrl = "https://widgets.leadconnectorhq.com/chat-widget/loader.js";
+            chatScript.dataset.widgetId = chat.widgetId;
+            document.body.appendChild(chatScript);
+          })
+          .catch((error) => console.warn("Optional live chat configuration could not be loaded.", error));
+      }
+    </script>
+  </body>
+</html>

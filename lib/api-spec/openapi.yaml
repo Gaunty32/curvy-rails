@@ -1,17 +1,25 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: Curvy Rails read-only demo API
+  description: Sales Order System API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
-  - name: curvy-rails
-    description: Curvy Rails storefront and community demo data
+  - name: customers
+    description: Customer management
+  - name: products
+    description: Product management
+  - name: suppliers
+    description: Supplier management
+  - name: orders
+    description: Order management
+  - name: shop
+    description: Public shop endpoints (no auth required)
+
 paths:
   /healthz:
     get:
@@ -26,98 +34,991 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
-  /curvy-rails/home:
-    get:
-      operationId: getCurvyRailsHome
-      tags: [curvy-rails]
-      summary: Get Curvy Rails homepage demo content
+
+  /callback:
+    post:
+      operationId: submitCallback
+      tags: [callback]
+      summary: Submit a callback request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CallbackInput"
       responses:
         "200":
-          description: Homepage content
+          description: Callback accepted
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HomeResponse"
-  /curvy-rails/products:
+                $ref: "#/components/schemas/CallbackResponse"
+        "400": { description: Invalid request }
+        "429": { description: Rate limited }
+        "502":
+          description: Request saved but HighLevel delivery failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CallbackResponse"
+        "503": { description: Callback service temporarily unavailable }
+  /callback/{id}:
     get:
-      operationId: listCurvyRailsProducts
-      tags: [curvy-rails]
-      summary: List demo products with optional filters
+      operationId: getCallbackStatus
+      tags: [callback]
       parameters:
-        - name: category
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Callback status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CallbackStatus"
+  /callback/availability:
+    get:
+      operationId: getCallbackAvailability
+      tags: [callback]
+      responses:
+        "200":
+          description: Current callback availability
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CallbackAvailability"
+  /admin/callbacks:
+    get:
+      operationId: listCallbacks
+      tags: [callback]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: period
           in: query
-          schema:
-            type: string
-            enum: [women, men, new]
+          schema: { type: string, enum: [today, "7", "30"], default: "30" }
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: source
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Callback requests
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/CallbackAdminRow" } }
+  /admin/callbacks/stats:
+    get:
+      operationId: getCallbackStats
+      tags: [callback]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Callback statistics
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CallbackStats" }
+  /admin/callbacks/settings:
+    get:
+      operationId: getCallbackSettings
+      tags: [callback]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CallbackSettingsResponse" }
+    patch:
+      operationId: updateCallbackSettings
+      tags: [callback]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CallbackSettingsInput" }
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CallbackSettingsResponse" }
+  /admin/callbacks/{id}/retry:
+    post:
+      operationId: retryCallback
+      tags: [callback]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Retry result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RetryCallbackResponse" }
+
+  # ─── Customers ───────────────────────────────────────────────────────────────
+  /customers:
+    get:
+      operationId: listCustomers
+      tags: [customers]
+      summary: List all customers
+      parameters:
         - name: search
           in: query
+          required: false
           schema:
             type: string
       responses:
         "200":
-          description: Matching demo products
+          description: List of customers
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProductsResponse"
-  /curvy-rails/products/{slug}:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Customer"
+    post:
+      operationId: createCustomer
+      tags: [customers]
+      summary: Create a new customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCustomerBody"
+      responses:
+        "201":
+          description: Customer created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /customers/{id}:
     get:
-      operationId: getCurvyRailsProduct
-      tags: [curvy-rails]
-      summary: Get a demo product and its community content
+      operationId: getCustomer
+      tags: [customers]
+      summary: Get a customer by ID
       parameters:
-        - name: slug
+        - name: id
           in: path
           required: true
           schema:
+            type: integer
+      responses:
+        "200":
+          description: Customer found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateCustomer
+      tags: [customers]
+      summary: Update a customer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCustomerBody"
+      responses:
+        "200":
+          description: Customer updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteCustomer
+      tags: [customers]
+      summary: Delete a customer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ─── Products ────────────────────────────────────────────────────────────────
+  /products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List all products
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
             type: string
       responses:
         "200":
-          description: Product and community content
+          description: List of products
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProductDetailResponse"
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+    post:
+      operationId: createProduct
+      tags: [products]
+      summary: Create a new product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductBody"
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /products/{id}:
+    get:
+      operationId: getProduct
+      tags: [products]
+      summary: Get a product by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Product found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
         "404":
-          description: Product not found
-  /curvy-rails/community:
-    get:
-      operationId: getCurvyRailsCommunity
-      tags: [curvy-rails]
-      summary: Get recent community demo activity
-      responses:
-        "200":
-          description: Community activity
+          description: Not found
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CommunityResponse"
-  /curvy-rails/my-rail:
-    get:
-      operationId: getCurvyRailsMyRail
-      tags: [curvy-rails]
-      summary: Get the sample My Rail account
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateProduct
+      tags: [products]
+      summary: Update a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProductBody"
       responses:
         "200":
-          description: Sample account dashboard
+          description: Product updated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MyRailResponse"
-  /curvy-rails/admin/overview:
-    get:
-      operationId: getCurvyRailsAdminOverview
-      tags: [curvy-rails]
-      summary: Get the sample admin overview
-      responses:
-        "200":
-          description: Sample admin metrics and moderation queue
+                $ref: "#/components/schemas/Product"
+        "404":
+          description: Not found
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AdminOverviewResponse"
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteProduct
+      tags: [products]
+      summary: Delete a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /products/{id}/website-publication:
+    patch:
+      operationId: updateProductWebsitePublication
+      tags: [products]
+      summary: Publish or hide a product on the shop
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebsitePublicationUpdate"
+      responses:
+        "200":
+          description: Website publication updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "400":
+          description: Publication is not allowed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ─── Suppliers ───────────────────────────────────────────────────────────────
+  /suppliers:
+    get:
+      operationId: listSuppliers
+      tags: [suppliers]
+      summary: List all suppliers
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of suppliers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Supplier"
+    post:
+      operationId: createSupplier
+      tags: [suppliers]
+      summary: Create a new supplier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSupplierBody"
+      responses:
+        "201":
+          description: Supplier created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Supplier"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /suppliers/{id}:
+    get:
+      operationId: getSupplier
+      tags: [suppliers]
+      summary: Get a supplier by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Supplier found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Supplier"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateSupplier
+      tags: [suppliers]
+      summary: Update a supplier
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSupplierBody"
+      responses:
+        "200":
+          description: Supplier updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Supplier"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteSupplier
+      tags: [suppliers]
+      summary: Delete a supplier
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ─── Orders ──────────────────────────────────────────────────────────────────
+  /orders:
+    get:
+      operationId: listOrders
+      tags: [orders]
+      summary: List all orders
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: customerId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Create a new order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderBody"
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /orders/{id}:
+    get:
+      operationId: getOrder
+      tags: [orders]
+      summary: Get an order by ID (includes line items)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Order found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateOrder
+      tags: [orders]
+      summary: Update an order status or notes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOrderBody"
+      responses:
+        "200":
+          description: Order updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteOrder
+      tags: [orders]
+      summary: Delete an order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /orders/{id}/items:
+    post:
+      operationId: addOrderItem
+      tags: [orders]
+      summary: Add a line item to an order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderItemBody"
+      responses:
+        "201":
+          description: Item added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderItem"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /orders/{id}/items/{itemId}:
+    patch:
+      operationId: updateOrderItem
+      tags: [orders]
+      summary: Update a line item quantity or price
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOrderItemBody"
+      responses:
+        "200":
+          description: Item updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderItem"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteOrderItem
+      tags: [orders]
+      summary: Remove a line item from an order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [orders]
+      summary: Get dashboard summary statistics
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  # ─── Shop (public) ────────────────────────────────────────────────────────────
+  /shop/settings:
+    get:
+      operationId: getShopSettings
+      tags: [shop]
+      summary: Get public shop branding and contact settings
+      responses:
+        "200":
+          description: Shop settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopSettings"
+
+  /shop/categories:
+    get:
+      operationId: listShopCategories
+      tags: [shop]
+      summary: List all product categories with product count
+      responses:
+        "200":
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ShopCategory"
+
+  /shop/products:
+    get:
+      operationId: listShopProducts
+      tags: [shop]
+      summary: List published shop products (public, no auth)
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: featured
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of shop products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ShopProduct"
+
+  /shop/products/{id}:
+    get:
+      operationId: getShopProduct
+      tags: [shop]
+      summary: Get a single shop product with full details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Product found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopProductDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /shop/enquiry:
+    post:
+      operationId: submitShopEnquiry
+      tags: [shop]
+      summary: Submit a quote / enquiry request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopEnquiryInput"
+      responses:
+        "200":
+          description: Enquiry submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopEnquiryResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
   schemas:
+    CallbackInput:
+      type: object
+      properties:
+        phone: { type: string }
+        page_url: { type: string }
+        page_title: { type: string }
+        referrer: { type: string }
+        session_id: { type: string }
+        device_type: { type: string }
+        utm_source: { type: string }
+        utm_medium: { type: string }
+        utm_campaign: { type: string }
+        utm_content: { type: string }
+        utm_term: { type: string }
+        gclid: { type: string }
+        fbclid: { type: string }
+        website_url: { type: string }
+        form_started_at: { type: integer }
+      required: [phone]
+    CallbackResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        callback_request_id: { type: string }
+        business_open: { type: boolean }
+        callback_type: { type: string, enum: [immediate, scheduled] }
+        status: { type: string }
+      required: [success, callback_request_id, business_open, callback_type, status]
+    CallbackAvailability:
+      type: object
+      properties:
+        business_open: { type: boolean }
+        callback_type: { type: string, enum: [immediate, scheduled] }
+        timezone: { type: string }
+      required: [business_open, callback_type, timezone]
+    CallbackStatus:
+      type: object
+      properties:
+        callbackRequestId: { type: string }
+        status: { type: string }
+        callbackType: { type: string }
+        businessOpen: { type: boolean }
+        createdAt: { type: string, format: date-time }
+      required: [callbackRequestId, status]
+    CallbackAdminRow:
+      type: object
+      properties:
+        callbackRequestId: { type: string }
+        phone: { type: string }
+        phoneNormalised: { type: string }
+        status: { type: string }
+        callbackType: { type: string }
+        businessOpen: { type: boolean }
+        pageUrl: { type: ["string", "null"] }
+        pageTitle: { type: ["string", "null"] }
+        referrer: { type: ["string", "null"] }
+        utmSource: { type: ["string", "null"] }
+        utmMedium: { type: ["string", "null"] }
+        utmCampaign: { type: ["string", "null"] }
+        utmContent: { type: ["string", "null"] }
+        utmTerm: { type: ["string", "null"] }
+        gclid: { type: ["string", "null"] }
+        fbclid: { type: ["string", "null"] }
+        deviceType: { type: ["string", "null"] }
+        source: { type: string }
+        highlevelSentAt: { type: ["string", "null"], format: date-time }
+        highlevelResponseStatus: { type: ["integer", "null"] }
+        highlevelContactId: { type: ["string", "null"] }
+        highlevelContactHttpStatus: { type: ["integer", "null"] }
+        highlevelContactSucceeded: { type: ["boolean", "null"] }
+        highlevelContactResponseBody: { type: ["string", "null"] }
+        highlevelContactError: { type: ["string", "null"] }
+        highlevelWorkflowId: { type: ["string", "null"] }
+        highlevelWorkflowStatus: { type: ["string", "null"] }
+        highlevelWorkflowHttpStatus: { type: ["integer", "null"] }
+        highlevelWorkflowSucceeded: { type: ["boolean", "null"] }
+        highlevelWorkflowResponseBody: { type: ["string", "null"] }
+        highlevelWorkflowError: { type: ["string", "null"] }
+        highlevelAttemptCount: { type: ["integer", "null"] }
+        highlevelLastAttemptAt: { type: ["string", "null"], format: date-time }
+        errorMessage: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+      required: [callbackRequestId, phone, phoneNormalised, status, callbackType, businessOpen, source, createdAt]
+    CallbackStats:
+      type: object
+      properties:
+        total: { type: integer }
+        immediate: { type: integer }
+        closed: { type: integer }
+        failures: { type: integer }
+        blocked: { type: integer }
+    CallbackSettingsInput:
+      type: object
+      properties:
+        hours: { $ref: "#/components/schemas/CallbackHours" }
+        ip_limit: { type: integer, minimum: 1, maximum: 100 }
+        phone_limit: { type: integer, minimum: 1, maximum: 100 }
+      required: [hours, ip_limit, phone_limit]
+    CallbackSettingsResponse:
+      allOf:
+        - $ref: "#/components/schemas/CallbackSettingsInput"
+        - type: object
+          properties:
+            timezone: { type: string }
+          required: [timezone]
+    RetryCallbackResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        status: { type: string }
+      required: [success, status]
+    CallbackHours:
+      type: object
+      properties:
+        monday: { $ref: "#/components/schemas/DayHours" }
+        tuesday: { $ref: "#/components/schemas/DayHours" }
+        wednesday: { $ref: "#/components/schemas/DayHours" }
+        thursday: { $ref: "#/components/schemas/DayHours" }
+        friday: { $ref: "#/components/schemas/DayHours" }
+        saturday: { $ref: "#/components/schemas/DayHours" }
+        sunday: { $ref: "#/components/schemas/DayHours" }
+      required: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+    DayHours:
+      type: ["object", "null"]
+      properties:
+        open: { type: string }
+        close: { type: string }
     HealthStatus:
       type: object
       properties:
@@ -125,398 +1026,825 @@ components:
           type: string
       required:
         - status
-    Product:
+
+    ErrorResponse:
       type: object
+      properties:
+        error:
+          type: string
       required:
-        - id
-        - slug
-        - name
-        - price
-        - category
-        - productType
-        - colour
-        - sizes
-        - stock
-        - description
-        - sizeNote
-        - imageUrl
-        - imageAlt
-        - isNew
-        - verifiedOwnerCount
-        - helpfulExperienceCount
+        - error
+
+    # ─── Customer ──────────────────────────────────────────────────────────────
+    Customer:
+      type: object
       properties:
         id:
-          type: string
-        slug:
-          type: string
+          type: integer
         name:
           type: string
-        price:
-          type: number
-        compareAtPrice:
-          type: ["number", "null"]
-        category:
+        contactFirstName:
+          type: ["string", "null"]
+        contactLastName:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        state:
+          type: ["string", "null"]
+        postcode:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        requiresPrepayment:
+          type: boolean
+        createdAt:
           type: string
-        productType:
+          format: date-time
+        updatedAt:
           type: string
-          enum: [women, men]
-        colour:
+          format: date-time
+      required:
+        - id
+        - name
+        - contactFirstName
+        - contactLastName
+        - email
+        - phone
+        - address
+        - city
+        - state
+        - postcode
+        - notes
+        - createdAt
+        - updatedAt
+
+    CreateCustomerBody:
+      type: object
+      properties:
+        name:
           type: string
-        sizes:
-          type: array
-          items:
-            type: string
-        stock:
+        contactFirstName:
+          type: ["string", "null"]
+        contactLastName:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        state:
+          type: ["string", "null"]
+        postcode:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        defaultShippingService:
+          type: ["string", "null"]
+        highLevelContactId:
+          type: ["string", "null"]
+        requiresPrepayment:
+          type: boolean
+        poNumberRequired:
+          type: boolean
+      required:
+        - name
+
+    UpdateCustomerBody:
+      type: object
+      properties:
+        name:
+          type: string
+        contactFirstName:
+          type: ["string", "null"]
+        contactLastName:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        billingEmail:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        state:
+          type: ["string", "null"]
+        postcode:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        defaultShippingService:
+          type: ["string", "null"]
+        highLevelContactId:
+          type: ["string", "null"]
+        requiresPrepayment:
+          type: boolean
+        poNumberRequired:
+          type: boolean
+        invoiceName:
+          type: ["string", "null"]
+        invoiceAddress:
+          type: ["string", "null"]
+        invoiceCity:
+          type: ["string", "null"]
+        invoicePostcode:
+          type: ["string", "null"]
+
+    # ─── Product ───────────────────────────────────────────────────────────────
+    Product:
+      type: object
+      properties:
+        id:
           type: integer
+        name:
+          type: string
+        sku:
+          type: ["string", "null"]
         description:
+          type: ["string", "null"]
+        category:
+          type: ["string", "null"]
+        wooCategoryIds:
+          type: ["array", "null"]
+          items:
+            type: integer
+        unitPrice:
+          type: number
+        stockQuantity:
+          type: ["integer", "null"]
+        supplierId:
+          type: ["integer", "null"]
+        secondarySupplierId:
+          type: ["integer", "null"]
+        supplierCode:
+          type: ["string", "null"]
+        websitePublished:
+          type: boolean
+        createdAt:
           type: string
-        sizeNote:
+          format: date-time
+        updatedAt:
           type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - sku
+        - description
+        - unitPrice
+        - stockQuantity
+        - supplierId
+        - secondarySupplierId
+        - supplierCode
+        - createdAt
+        - updatedAt
+
+    CreateProductBody:
+      type: object
+      properties:
+        name:
+          type: string
+        sku:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        category:
+          type: ["string", "null"]
+        wooCategoryIds:
+          type: ["array", "null"]
+          items:
+            type: integer
+        unitPrice:
+          type: number
+        stockQuantity:
+          type: ["integer", "null"]
+        supplierId:
+          type: ["integer", "null"]
+        secondarySupplierId:
+          type: ["integer", "null"]
+        supplierCode:
+          type: ["string", "null"]
         imageUrl:
-          type: string
-        imageAlt:
-          type: string
-        isNew:
+          type: ["string", "null"]
+        websitePublished:
           type: boolean
-        verifiedOwnerCount:
-          type: integer
-        helpfulExperienceCount:
-          type: integer
-    ProductExperience:
-      type: object
+        websiteStatus:
+          type: string
+          enum: [draft, publish]
       required:
-        - id
-        - productSlug
-        - authorName
-        - purchasedSize
-        - fit
-        - body
-        - createdAt
-        - helpfulCount
-      properties:
-        id:
-          type: string
-        productSlug:
-          type: string
-        authorName:
-          type: string
-        purchasedSize:
-          type: string
-        usualSize:
-          type: ["string", "null"]
-        fit:
-          type: string
-          enum: [runs-small, just-right, runs-large]
-        height:
-          type: ["string", "null"]
-        body:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
-        photoUrl:
-          type: ["string", "null"]
-        photoAlt:
-          type: ["string", "null"]
-        helpfulCount:
-          type: integer
-    ProductAnswer:
+        - name
+        - unitPrice
+
+    UpdateProductBody:
       type: object
-      required:
-        - id
-        - authorName
-        - verifiedOwner
-        - body
-        - createdAt
-        - helpfulCount
       properties:
-        id:
+        name:
           type: string
-        authorName:
-          type: string
-        verifiedOwner:
+        sku:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        category:
+          type: ["string", "null"]
+        wooCategoryIds:
+          type: ["array", "null"]
+          items:
+            type: integer
+        unitPrice:
+          type: number
+        stockQuantity:
+          type: ["integer", "null"]
+        supplierId:
+          type: ["integer", "null"]
+        secondarySupplierId:
+          type: ["integer", "null"]
+        supplierCode:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        websitePublished:
           type: boolean
-        body:
+        websiteStatus:
           type: string
-        createdAt:
-          type: string
-          format: date-time
-        helpfulCount:
-          type: integer
-    ProductQuestion:
+          enum: [draft, publish]
+
+    WebsitePublicationUpdate:
       type: object
-      required:
-        - id
-        - productSlug
-        - askerName
-        - body
-        - createdAt
-        - answers
+      required: [published]
+      properties:
+        published:
+          type: boolean
+
+    # ─── Supplier ──────────────────────────────────────────────────────────────
+    Supplier:
+      type: object
       properties:
         id:
+          type: integer
+        name:
           type: string
-        productSlug:
-          type: string
-        askerName:
-          type: string
-        body:
-          type: string
+        contactName:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        county:
+          type: ["string", "null"]
+        postcode:
+          type: ["string", "null"]
+        country:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
         createdAt:
           type: string
           format: date-time
-        answers:
-          type: array
-          items:
-            $ref: "#/components/schemas/ProductAnswer"
-    CommunitySummary:
-      type: object
+        updatedAt:
+          type: string
+          format: date-time
       required:
-        - memberCount
-        - helpfulCount
-        - experienceCount
-        - questionCount
-      properties:
-        memberCount:
-          type: integer
-        helpfulCount:
-          type: integer
-        experienceCount:
-          type: integer
-        questionCount:
-          type: integer
-    HomeResponse:
+        - id
+        - name
+        - contactName
+        - email
+        - phone
+        - address
+        - city
+        - county
+        - postcode
+        - country
+        - notes
+        - createdAt
+        - updatedAt
+
+    CreateSupplierBody:
       type: object
-      required:
-        - justLanded
-        - experiences
-        - questions
-        - summary
       properties:
-        justLanded:
-          type: array
-          items:
-            $ref: "#/components/schemas/Product"
-        experiences:
-          type: array
-          items:
-            $ref: "#/components/schemas/ProductExperience"
-        questions:
-          type: array
-          items:
-            $ref: "#/components/schemas/ProductQuestion"
-        summary:
-          $ref: "#/components/schemas/CommunitySummary"
-    ProductsResponse:
+        name:
+          type: string
+        contactName:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        county:
+          type: ["string", "null"]
+        postcode:
+          type: ["string", "null"]
+        country:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+      required:
+        - name
+
+    UpdateSupplierBody:
       type: object
-      required:
-        - items
-        - categories
-        - sizes
       properties:
+        name:
+          type: string
+        contactName:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        county:
+          type: ["string", "null"]
+        postcode:
+          type: ["string", "null"]
+        country:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+
+    # ─── Order ─────────────────────────────────────────────────────────────────
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+        orderNumber:
+          type: string
+        customerId:
+          type: ["integer", "null"]
+        customerName:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [draft, confirmed, shipped, delivered, cancelled]
+        totalAmount:
+          type: number
+        notes:
+          type: ["string", "null"]
+        orderDate:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - orderNumber
+        - customerId
+        - customerName
+        - status
+        - totalAmount
+        - notes
+        - orderDate
+        - createdAt
+        - updatedAt
+
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        orderId:
+          type: integer
+        productId:
+          type: ["integer", "null"]
+        productName:
+          type: string
+        colour:
+          type: ["string", "null"]
+        size:
+          type: ["string", "null"]
+        finishId:
+          type: ["integer", "null"]
+        finishName:
+          type: ["string", "null"]
+        recipientType:
+          type: string
+          enum: [stock, person]
+        recipientName:
+          type: ["string", "null"]
+        quantity:
+          type: integer
+        unitPrice:
+          type: number
+        lineTotal:
+          type: number
+      required:
+        - id
+        - orderId
+        - productId
+        - productName
+        - colour
+        - size
+        - finishId
+        - finishName
+        - recipientType
+        - recipientName
+        - quantity
+        - unitPrice
+        - lineTotal
+
+    OrderDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        orderNumber:
+          type: string
+        customerId:
+          type: ["integer", "null"]
+        customerName:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [draft, confirmed, shipped, delivered, cancelled]
+        totalAmount:
+          type: number
+        notes:
+          type: ["string", "null"]
+        orderDate:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
         items:
           type: array
           items:
-            $ref: "#/components/schemas/Product"
-        categories:
+            $ref: "#/components/schemas/OrderItem"
+      required:
+        - id
+        - orderNumber
+        - customerId
+        - customerName
+        - status
+        - totalAmount
+        - notes
+        - orderDate
+        - createdAt
+        - updatedAt
+        - items
+
+    CreateOrderBody:
+      type: object
+      properties:
+        customerId:
+          type: ["integer", "null"]
+        notes:
+          type: ["string", "null"]
+        orderDate:
+          type: ["string", "null"]
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreateOrderItemBody"
+
+    UpdateOrderBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [draft, confirmed, shipped, delivered, cancelled]
+        notes:
+          type: ["string", "null"]
+        customerId:
+          type: ["integer", "null"]
+        orderDate:
+          type: ["string", "null"]
+          format: date-time
+        poNumber:
+          type: ["string", "null"]
+
+    CreateOrderItemBody:
+      type: object
+      properties:
+        productId:
+          type: ["integer", "null"]
+        productName:
+          type: string
+        colour:
+          type: ["string", "null"]
+        size:
+          type: ["string", "null"]
+        finishId:
+          type: ["integer", "null"]
+        finishName:
+          type: ["string", "null"]
+        recipientType:
+          type: string
+          enum: [stock, person]
+        recipientName:
+          type: ["string", "null"]
+        quantity:
+          type: integer
+        unitPrice:
+          type: number
+      required:
+        - productName
+        - quantity
+        - unitPrice
+
+    UpdateOrderItemBody:
+      type: object
+      properties:
+        quantity:
+          type: integer
+        unitPrice:
+          type: number
+
+    # ─── Shop ──────────────────────────────────────────────────────────────────
+    ShopSettings:
+      type: object
+      properties:
+        businessName:
+          type: string
+        tagline:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        contactEmail:
+          type: ["string", "null"]
+        contactPhone:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        heroText:
+          type: ["string", "null"]
+        heroSubtext:
+          type: ["string", "null"]
+        portalUrl:
+          type: ["string", "null"]
+      required:
+        - businessName
+        - tagline
+        - logoUrl
+        - contactEmail
+        - contactPhone
+        - address
+        - heroText
+        - heroSubtext
+        - portalUrl
+
+    ShopCategory:
+      type: object
+      properties:
+        name:
+          type: string
+        count:
+          type: integer
+      required:
+        - name
+        - count
+
+    ShopProductColour:
+      type: object
+      properties:
+        colour:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+      required:
+        - colour
+
+    ShopProductVariant:
+      type: object
+      properties:
+        colour:
+          type: ["string", "null"]
+        size:
+          type: ["string", "null"]
+        price:
+          type: ["number", "null"]
+      required:
+        - colour
+        - size
+        - price
+
+    ShopProduct:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        sku:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        unitPrice:
+          type: number
+        category:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        imageUrls:
           type: array
           items:
             type: string
+        colours:
+          type: array
+          items:
+            type: string
+        guidanceBestFor:
+          type: ["string", "null"]
+        guidanceTags:
+          type: array
+          items:
+            type: string
+        guidanceBadges:
+          type: array
+          items:
+            type: string
+        permalink:
+          type: ["string", "null"]
+      required:
+        - id
+        - name
+        - sku
+        - description
+        - unitPrice
+        - category
+        - imageUrl
+        - imageUrls
+        - colours
+        - guidanceBestFor
+        - guidanceTags
+        - guidanceBadges
+        - permalink
+
+    ShopProductDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        sku:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        unitPrice:
+          type: number
+        category:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        imageUrls:
+          type: array
+          items:
+            type: string
+        colours:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopProductColour"
         sizes:
           type: array
           items:
             type: string
-    ProductDetailResponse:
-      type: object
-      required:
-        - product
-        - experiences
-        - questions
-        - relatedProducts
-      properties:
-        product:
-          $ref: "#/components/schemas/Product"
-        experiences:
+        variants:
           type: array
           items:
-            $ref: "#/components/schemas/ProductExperience"
-        questions:
+            $ref: "#/components/schemas/ShopProductVariant"
+        guidanceBestFor:
+          type: ["string", "null"]
+        guidanceNotIdealFor:
+          type: ["string", "null"]
+        guidanceTags:
           type: array
           items:
-            $ref: "#/components/schemas/ProductQuestion"
+            type: string
+        guidanceBadges:
+          type: array
+          items:
+            type: string
         relatedProducts:
           type: array
           items:
-            $ref: "#/components/schemas/Product"
-    CommunityResponse:
-      type: object
+            $ref: "#/components/schemas/ShopProduct"
+        permalink:
+          type: ["string", "null"]
       required:
-        - summary
-        - experiences
-        - questions
-      properties:
-        summary:
-          $ref: "#/components/schemas/CommunitySummary"
-        experiences:
-          type: array
-          items:
-            $ref: "#/components/schemas/ProductExperience"
-        questions:
-          type: array
-          items:
-            $ref: "#/components/schemas/ProductQuestion"
-    DemoOrderItem:
+        - id
+        - name
+        - sku
+        - description
+        - unitPrice
+        - category
+        - imageUrl
+        - imageUrls
+        - colours
+        - sizes
+        - variants
+        - guidanceBestFor
+        - guidanceNotIdealFor
+        - guidanceTags
+        - guidanceBadges
+        - relatedProducts
+        - permalink
+
+    ShopEnquiryInput:
       type: object
-      required: [productName, size, quantity]
       properties:
-        productName:
-          type: string
-        size:
-          type: string
-        quantity:
-          type: integer
-    DemoOrder:
-      type: object
-      required: [id, date, status, total, items]
-      properties:
-        id:
-          type: string
-        date:
-          type: string
-          format: date
-        status:
-          type: string
-        total:
-          type: number
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/DemoOrderItem"
-    RailActivity:
-      type: object
-      required: [id, description, date, stars]
-      properties:
-        id:
-          type: string
-        description:
-          type: string
-        date:
-          type: string
-          format: date
-        stars:
-          type: integer
-    WalletSummary:
-      type: object
-      required: [currentStars, earnedStars, redeemedStars, pendingStars, availableCredit, history]
-      properties:
-        currentStars:
-          type: integer
-        earnedStars:
-          type: integer
-        redeemedStars:
-          type: integer
-        pendingStars:
-          type: integer
-        availableCredit:
-          type: number
-        history:
-          type: array
-          items:
-            $ref: "#/components/schemas/RailActivity"
-    DemoCustomer:
-      type: object
-      required: [firstName, lastName, email, joinedAt]
-      properties:
-        firstName:
-          type: string
-        lastName:
+        name:
           type: string
         email:
           type: string
-          format: email
-        whatnotUsername:
+        company:
           type: ["string", "null"]
-        joinedAt:
+        phone:
+          type: ["string", "null"]
+        message:
           type: string
-          format: date
-    MyRailResponse:
-      type: object
-      required: [customer, orders, ownedProducts, activity, wallet]
-      properties:
-        customer:
-          $ref: "#/components/schemas/DemoCustomer"
-        orders:
+        productsOfInterest:
           type: array
           items:
-            $ref: "#/components/schemas/DemoOrder"
-        ownedProducts:
-          type: array
-          items:
-            $ref: "#/components/schemas/Product"
-        activity:
-          type: array
-          items:
-            $ref: "#/components/schemas/RailActivity"
-        wallet:
-          $ref: "#/components/schemas/WalletSummary"
-    AdminMetrics:
-      type: object
+            type: string
       required:
-        - orders
-        - revenue
-        - customers
-        - newMembers
-        - experiences
-        - questions
-        - helpfulInteractions
-        - photos
-        - starsIssued
-        - starsRedeemed
+        - name
+        - email
+        - message
+
+    ShopEnquiryResponse:
+      type: object
       properties:
-        orders:
+        success:
+          type: boolean
+        referenceNumber:
+          type: string
+      required:
+        - success
+        - referenceNumber
+
+    # ─── Dashboard ─────────────────────────────────────────────────────────────
+    DashboardStats:
+      type: object
+      properties:
+        totalOrders:
           type: integer
-        revenue:
+        totalRevenue:
           type: number
-        customers:
+        totalCustomers:
           type: integer
-        newMembers:
+        totalProducts:
           type: integer
-        experiences:
-          type: integer
-        questions:
-          type: integer
-        helpfulInteractions:
-          type: integer
-        photos:
-          type: integer
-        starsIssued:
-          type: integer
-        starsRedeemed:
-          type: integer
-    ModerationQueueItem:
-      type: object
-      required: [id, type, summary, status, reportedAt]
-      properties:
-        id:
-          type: string
-        type:
-          type: string
-          enum: [experience, photo, question, answer]
-        summary:
-          type: string
-        status:
-          type: string
-          enum: [pending, reported, approved]
-        reportedAt:
-          type: string
-          format: date-time
-    AdminOverviewResponse:
-      type: object
-      required: [metrics, moderationQueue]
-      properties:
-        metrics:
-          $ref: "#/components/schemas/AdminMetrics"
-        moderationQueue:
+        ordersByStatus:
+          type: object
+          properties:
+            draft:
+              type: integer
+            confirmed:
+              type: integer
+            shipped:
+              type: integer
+            delivered:
+              type: integer
+            cancelled:
+              type: integer
+          required:
+            - draft
+            - confirmed
+            - shipped
+            - delivered
+            - cancelled
+        recentOrders:
           type: array
           items:
-            $ref: "#/components/schemas/ModerationQueueItem"
-
+            $ref: "#/components/schemas/Order"
+      required:
+        - totalOrders
+        - totalRevenue
+        - totalCustomers
+        - totalProducts
+        - ordersByStatus
+        - recentOrders

@@ -1,4 +1,4 @@
 #!/bin/bash
 set -e
 pnpm install --frozen-lockfile
-pnpm --filter db push
+echo "Template schema changes require review and an isolated blank database; automatic database push is disabled."

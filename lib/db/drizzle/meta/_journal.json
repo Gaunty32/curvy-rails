@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1790176021396,
+      "tag": "0000_clean_bootstrap_v1",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790176021397,
+      "tag": "0001_reviewed_missing_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790176021398,
+      "tag": "0002_reviewed_chat_schema",
+      "breakpoints": true
+    }
+  ]
+}

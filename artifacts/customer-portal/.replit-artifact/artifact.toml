@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/customer-portal/"
+title = "Curvy Rails Customer Portal"
+description = "Imported customer portal from the supplied sanitized source, using its original screens and API."
+version = "1.0.0"
+id = "artifacts/customer-portal"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/customer-portal/" ]
+localPort = 23434
+
+[services.development]
+run = "pnpm --filter @workspace/customer-portal run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/customer-portal", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/customer-portal/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23434"
+BASE_PATH = "/customer-portal/"

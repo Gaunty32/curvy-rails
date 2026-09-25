@@ -11,6 +11,12 @@
     },
     {
       "path": "./lib/api-zod"
+    },
+    {
+      "path": "./lib/object-storage-web"
+    },
+    {
+      "path": "./lib/integrations-openai-ai-server"
     }
   ]
 }
