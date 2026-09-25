@@ -1,0 +1,671 @@
+# CURVY RAILS — LIVE SHOWS & LEAD CAPTURE
+
+Add the following requirements to the Curvy Rails / Whatnot architecture.
+
+The existing Curvy Rails Whatnot operation runs a substantial programme of live shows.
+
+Examples include:
+
+* Preloved Power Hour — Size 16–18
+* Preloved Power Hour — Size 20–22
+* Preloved Power Hour — Size 24+
+* Brand New With Tags
+* Coat Show
+* Loungewear
+* themed/specialist shows
+
+The website should make these live shows a significant part of the Curvy Rails experience.
+
+The objective is NOT to reproduce Whatnot.
+
+The objectives are:
+
+1. Promote upcoming Curvy Rails live shows.
+2. Send people to Whatnot to watch/buy.
+3. Encourage visitors to register for future show alerts.
+4. Capture first-party customer data.
+5. Convert the Whatnot audience into Curvy Rails community members.
+6. Attribute those people and subsequent website sales back to Whatnot/live activity.
+
+---
+
+# 1. PRIMARY NAVIGATION
+
+Add a prominent navigation item:
+
+# 🔴 LIVE
+
+Potential primary navigation:
+
+WOMEN | MEN | NEW IN | **LIVE** | THE RAIL | COMMUNITY
+
+When Curvy Rails is currently broadcasting, change the treatment visually to:
+
+# 🔴 LIVE NOW
+
+This should be noticeable without looking like an aggressive ecommerce promotion.
+
+---
+
+# 2. LIVE PAGE
+
+Create:
+
+# /live
+
+This should be a proper destination page, not simply a redirect to Whatnot.
+
+At the top:
+
+# LIVE ON THE RAILS
+
+Supporting copy:
+
+**The rails move fast when we're live.**
+
+Join us on Whatnot for one-offs, preloved finds, brand-new-with-tags bargains and shows dedicated to different sizes and styles.
+
+If a show is currently live:
+
+# 🔴 WE'RE LIVE NOW
+
+Show:
+
+* show artwork
+* show title
+* description
+* live status
+* Whatnot CTA
+
+Primary button:
+
+# JOIN US LIVE →
+
+This button opens the correct Whatnot show.
+
+---
+
+# 3. UPCOMING SHOWS
+
+Below the current live area create:
+
+# COMING UP ON THE RAILS
+
+Use a visual card/grid experience inspired by the supplied Whatnot schedule screenshot.
+
+Each show card should contain:
+
+* artwork
+* title
+* date
+* start time
+* category/theme
+* relevant size range where applicable
+* short description
+* Whatnot show link where available
+
+Examples:
+
+### PRELOVED POWER HOUR
+
+**SIZE 16–18**
+
+Friday · 6:30pm
+
+### PRELOVED POWER HOUR
+
+**SIZE 20–22**
+
+Friday · 7:40pm
+
+### PRELOVED POWER HOUR
+
+**24+**
+
+Friday · 8:45pm
+
+### BRAND NEW WITH TAGS
+
+Saturday · 7pm
+
+### COAT SHOW
+
+Wednesday · 7pm
+
+### LOUNGEWEAR
+
+Thursday · 7pm
+
+Do not hard-code these show types.
+
+Admin must be able to create arbitrary shows.
+
+---
+
+# 4. SHOW DETAIL
+
+Each show should have its own internal record and optional page/route.
+
+Store:
+
+* show ID
+* title
+* description
+* artwork
+* show type
+* size/theme
+* scheduled start
+* scheduled finish if known
+* status
+* Whatnot URL
+* campaign attribution code
+* featured flag
+
+Statuses:
+
+DRAFT
+SCHEDULED
+LIVE
+FINISHED
+CANCELLED
+
+Admin should be able to manage this without code changes.
+
+---
+
+# 5. FIRST TO KNOW
+
+This is one of the most important website conversion points.
+
+Prominently feature:
+
+# WANT TO KNOW WHEN WE'RE LIVE?
+
+or:
+
+# BE FIRST TO KNOW
+
+Supporting copy:
+
+**Tell us where to find you and we'll let you know about upcoming Curvy Rails lives, special shows and things we think you'll actually want to know about.**
+
+Capture:
+
+### First name
+
+Required
+
+### Last name
+
+Required
+
+### Email address
+
+Required
+
+### Mobile number
+
+Required
+
+Then appropriate explicit communication preferences/consent.
+
+Do not silently treat submitting contact details as unlimited marketing permission.
+
+Record consent and source properly.
+
+CTA:
+
+# KEEP ME IN THE LOOP →
+
+After submission:
+
+**You're on the Rails. ❤️**
+
+Then encourage:
+
+# JOIN THE RAILS
+
+if they do not already have a Curvy Rails account.
+
+---
+
+# 6. MAKE LEAD CAPTURE SITE-WIDE
+
+Do not restrict this form to /live.
+
+Create reusable components so the same lead-capture opportunity can appear appropriately on:
+
+* homepage
+* /live
+* show pages
+* footer
+* community pages
+* relevant landing pages
+
+Do NOT bombard visitors with constant popups.
+
+The experience should feel like:
+
+**Join us**
+
+rather than:
+
+**Give us your data.**
+
+---
+
+# 7. SHOW-SPECIFIC REGISTRATION
+
+Allow someone to express interest in a PARTICULAR show.
+
+For example:
+
+### COAT SHOW
+
+Wednesday · 7pm
+
+**REMIND ME ABOUT THIS SHOW →**
+
+If we don't already know the visitor:
+
+Ask for:
+
+Name
+Email
+Mobile
+
+plus appropriate communication choices.
+
+If they are already logged in / recognised and have appropriate contact information:
+
+Allow a much simpler:
+
+**REMIND ME →**
+
+Record:
+
+customer/contact
+
+show
+
+registration timestamp
+
+source
+
+communication preference/permission
+
+This creates useful intent data.
+
+---
+
+# 8. SIZE / SHOW INTERESTS
+
+During signup we can optionally ask:
+
+### What would you like us to tell you about?
+
+Checkbox examples:
+
+□ Size 16–18 shows
+□ Size 20–22 shows
+□ Size 24+ shows
+□ Brand New With Tags
+□ Preloved
+□ Coats & Jackets
+□ Loungewear
+□ Everything — don't let me miss anything
+
+These must be administrator-configurable.
+
+Do NOT require someone to disclose their clothing size.
+
+These are show/content preferences, not mandatory profile information.
+
+This allows much more relevant communication later.
+
+---
+
+# 9. HIGHLEVEL
+
+The eventual destination for lead nurturing/communication will be HighLevel.
+
+Curvy Rails should remain the source of the original lead capture and consent evidence.
+
+When HighLevel is connected later, send appropriate information such as:
+
+Name
+
+Email
+
+Phone
+
+Source
+
+Campaign
+
+Whatnot source
+
+Show interests
+
+Specific show registrations
+
+Curvy Rails membership status
+
+Relevant consent/preferences
+
+Potential tags might eventually include:
+
+CR-Live
+
+CR-Whatnot
+
+CR-Preloved
+
+CR-BNWT
+
+CR-16-18-Show
+
+CR-20-22-Show
+
+CR-24Plus-Show
+
+Do NOT connect HighLevel yet.
+
+Prepare the integration architecture.
+
+---
+
+# 10. REMINDERS
+
+Build the underlying event architecture so that HighLevel can eventually automate appropriate show communications.
+
+Potential journey:
+
+Customer registers interest
+
+↓
+
+Confirmation
+
+↓
+
+Future show announced matching their interests
+
+↓
+
+Notification
+
+↓
+
+Show-day reminder
+
+↓
+
+Show starting soon
+
+↓
+
+🔴 WE'RE LIVE
+
+↓
+
+JOIN THE LIVE →
+
+The actual frequency/channel of these communications will be decided later.
+
+Do not implement live messaging yet.
+
+---
+
+# 11. QR CODE DURING THE LIVE
+
+We should have one very simple permanent URL:
+
+# curvyrails.co.uk/live
+
+This is the URL/QR code we can repeatedly promote during Whatnot broadcasts.
+
+Someone scanning it sees:
+
+🔴 Current live show
+
+Upcoming shows
+
+Be First To Know
+
+Join the Rails
+
+Website products
+
+Community activity
+
+This means we don't need a different QR code every time we create a Whatnot show.
+
+The destination stays the same.
+
+The CONTENT changes.
+
+---
+
+# 12. HOMEPAGE LIVE MODULE
+
+Add a homepage module.
+
+When currently live:
+
+# 🔴 WE'RE LIVE
+
+**Come and join us on Whatnot.**
+
+[JOIN THE LIVE]
+
+When not live:
+
+# NEXT ON THE RAILS
+
+Show artwork
+
+**Preloved Power Hour — Size 20–22**
+
+Friday · 7:40pm
+
+[REMIND ME] [SEE ALL SHOWS]
+
+This component should update from the Live Shows database.
+
+---
+
+# 13. HEADER LIVE STATUS
+
+Create a lightweight global live status.
+
+When a show status is LIVE:
+
+A slim website header/banner could show:
+
+# 🔴 WE'RE LIVE — COME AND JOIN US →
+
+When no show is live:
+
+It could optionally show:
+
+**Next Live: Friday 6:30pm — See what's coming →**
+
+Admin must be able to enable/disable this.
+
+---
+
+# 14. ADMIN — LIVE SHOWS
+
+Add:
+
+# LIVE SHOWS
+
+to Curvy Rails Admin.
+
+Admin should be able to:
+
+CREATE SHOW
+
+UPLOAD ARTWORK
+
+SET DATE/TIME
+
+ADD WHATNOT LINK
+
+SET SHOW TYPE
+
+SET SIZE/THEME
+
+FEATURE SHOW
+
+MARK LIVE
+
+MARK FINISHED
+
+CANCEL SHOW
+
+VIEW REGISTRATIONS
+
+VIEW TRAFFIC
+
+VIEW WEBSITE REGISTRATIONS ATTRIBUTED TO SHOW
+
+Eventually show:
+
+Registrations
+
+Reminders requested
+
+Website visits
+
+Join the Rails registrations
+
+Website customers
+
+Website revenue attributed
+
+---
+
+# 15. DO NOT SCRAPE WHATNOT
+
+For the first implementation, do NOT attempt to scrape the Whatnot website to obtain upcoming shows.
+
+Admin should enter/manage shows within Curvy Rails.
+
+Design the integration layer so that if Whatnot later provides an appropriate authenticated method of retrieving show information, this can replace or supplement manual management.
+
+Do not make the Live experience dependent upon undocumented Whatnot functionality.
+
+---
+
+# 16. CRM PRINCIPLE
+
+The commercial objective behind Live is important.
+
+WHATNOT FOLLOWER
+
+is useful.
+
+But:
+
+CURVY RAILS CONTACT
+
+with appropriate first-party:
+
+Name
+Email
+Mobile
+Preferences
+Consent
+Behaviour
+Community membership
+Website purchase history
+
+is considerably more useful to Curvy Rails.
+
+Therefore every Live page should gently create opportunities to:
+
+# JOIN THE RAILS
+
+or:
+
+# BE FIRST TO KNOW
+
+without making the experience feel like a lead-generation funnel.
+
+---
+
+# 17. IMPORTANT USER EXPERIENCE PRINCIPLE
+
+Do not use corporate CRM terminology on the public website.
+
+Never show:
+
+"Lead capture"
+
+"Marketing database"
+
+"Submit details"
+
+"CRM"
+
+Instead use Curvy Rails language:
+
+**Be first to know**
+
+**Keep me in the loop**
+
+**Remind me**
+
+**Join the Rails**
+
+**Don't let me miss it**
+
+**Tell me when you're live**
+
+The technology can behave like a sophisticated CRM funnel.
+
+The customer experience must feel like joining a community.
+
+---
+
+# 18. THE CUSTOMER JOURNEY
+
+The complete concept is now:
+
+```
+            WHATNOT LIVE
+                 │
+           ONE-OFF ITEMS
+                 │
+                 ▼
+          CURVYRAILS.CO.UK
+                 │
+      ┌──────────┴──────────┐
+      │                     │
+  BE FIRST               JOIN THE
+   TO KNOW                 RAILS
+      │                     │
+      └──────────┬──────────┘
+                 │
+         NAME / EMAIL / PHONE
+                 │
+                 ▼
+           CURVY RAILS
+             COMMUNITY
+                 │
+   ┌─────────────┼─────────────┐
+   │             │             │
+FUTURE        WEBSITE       COMMUNITY
+ LIVES        PRODUCTS      ACTIVITY
+   │             │             │
+   └─────────────┼─────────────┘
+                 │
+            RAIL STARS
+                 │
+                 ▼
+         LONG-TERM CUSTOMER
+```
+
+This customer relationship is the primary strategic asset we are building.
