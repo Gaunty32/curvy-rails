@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/draft/"
+title = "Curvy Rails Earlier Draft"
+description = "Restored read-only storefront and community draft, shown separately from the authoritative imported Curvy Rails installation."
+version = "1.0.0"
+id = "artifacts/curvy-rails-draft"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/draft/" ]
+localPort = 26093
+
+[services.development]
+run = "pnpm --filter @workspace/curvy-rails-draft run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/curvy-rails-draft", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/curvy-rails-draft/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "26093"
+BASE_PATH = "/draft/"
