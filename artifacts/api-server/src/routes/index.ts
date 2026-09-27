@@ -47,6 +47,7 @@ import campaignsRouter from "./campaigns";
 import seoManagementRouter from "./seo-management";
 import callbackRouter from "./callback";
 import mayaRouter from "./maya";
+import manufacturingRouter from "./manufacturing";
 
 const router: IRouter = Router();
 
@@ -98,5 +99,6 @@ router.use(campaignsRouter);
 router.use(seoManagementRouter);
 router.use(callbackRouter);
 router.use(mayaRouter);
+router.use(manufacturingRouter);
 
 export default router;

@@ -59,6 +59,8 @@ import Customers from "@/pages/Customers";
 import CustomerDetail from "@/pages/CustomerDetail";
 import Products from "@/pages/Products";
 import ProductDetail from "@/pages/ProductDetail";
+import ProductBom from "@/pages/ProductBom";
+import Components from "@/pages/Components";
 import Stock from "@/pages/Stock";
 import ProcessStock from "@/pages/ProcessStock";
 import Purchasing from "@/pages/Purchasing";
@@ -232,8 +234,10 @@ function Router() {
       <Route path="/customers" component={Customers} />
       <Route path="/customers/:id" component={CustomerDetail} />
       <Route path="/products" component={Products} />
+       <Route path="/products/:id/bom" component={ProductBom} />
       <Route path="/products/:id" component={ProductDetail} />
       <Route path="/stock" component={Stock} />
+       <Route path="/components" component={Components} />
       <Route path="/process-stock" component={ProcessStock} />
       <Route path="/purchasing" component={Purchasing} />
       <Route path="/production" component={Production} />

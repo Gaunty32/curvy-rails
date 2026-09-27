@@ -19,8 +19,201 @@ tags:
     description: Order management
   - name: shop
     description: Public shop endpoints (no auth required)
+  - name: manufacturing
+    description: Phase 1 manufacturing components, stock ledger, and BOM authoring (staff-gated)
 
 paths:
+  /manufacturing/components:
+    get:
+      operationId: listManufacturingComponents
+      tags: [manufacturing]
+      summary: List physical manufacturing components
+      responses:
+        "200":
+          description: Components
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/ManufacturingComponent" } }
+    post:
+      operationId: createManufacturingComponent
+      tags: [manufacturing]
+      summary: Create a component with zero opening stock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ManufacturingComponentInput" }
+      responses:
+        "201":
+          description: Created component
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ManufacturingComponent" }
+        "400": { description: Invalid input }
+        "409": { description: SKU already exists }
+  /manufacturing/components/{id}:
+    patch:
+      operationId: updateManufacturingComponent
+      tags: [manufacturing]
+      summary: Update component metadata without changing stock
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ManufacturingComponentUpdate" }
+      responses:
+        "200":
+          description: Updated component
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ManufacturingComponent" }
+        "400": { description: Invalid input }
+        "404": { description: Component not found }
+        "409": { description: SKU already exists }
+  /manufacturing/components/{id}/movements:
+    get:
+      operationId: listManufacturingComponentMovements
+      tags: [manufacturing]
+      summary: List the append-only stock ledger for a component
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200":
+          description: Stock movements, newest first
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/ManufacturingStockMovement" } }
+        "404": { description: Component not found }
+  /manufacturing/components/{id}/opening-balance:
+    post:
+      operationId: recordManufacturingOpeningBalance
+      tags: [manufacturing]
+      summary: Record the one-time counted opening component balance
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ManufacturingOpeningBalanceInput" }
+      responses:
+        "201":
+          description: Opening balance movement
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ManufacturingStockMovement" }
+        "400": { description: Invalid input }
+        "404": { description: Component not found }
+        "409": { description: Opening balance already recorded }
+  /manufacturing/components/{id}/stocktakes:
+    get:
+      operationId: listManufacturingComponentStocktakes
+      tags: [manufacturing]
+      summary: List stocktake drafts and approval history for a component
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200":
+          description: Stocktakes newest first
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/ManufacturingStocktake" } }
+        "404": { description: Component not found }
+    post:
+      operationId: createManufacturingStocktake
+      tags: [manufacturing]
+      summary: Create a stocktake draft against the current expected balance
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ManufacturingStocktakeInput" }
+      responses:
+        "201":
+          description: Draft stocktake
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ManufacturingStocktake" }
+        "400": { description: Invalid input }
+        "404": { description: Component not found }
+  /manufacturing/stocktakes/{id}/approve:
+    post:
+      operationId: approveManufacturingStocktake
+      tags: [manufacturing]
+      summary: Approve stocktake and record its variance movement
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200":
+          description: Approved stocktake and optional variance movement
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ManufacturingStocktakeApproval" }
+        "404": { description: Stocktake not found }
+        "409": { description: Already approved or expected stock changed since draft }
+  /manufacturing/variants/{variantId}/classification:
+    patch:
+      operationId: classifyManufacturingVariantInventory
+      tags: [manufacturing]
+      summary: Set a variant's inventory classification label
+      description: Staff-only review/classification label. This does not transfer, rewrite, or otherwise change the variant's existing stock quantity or any component balance.
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: variantId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ManufacturingVariantClassificationInput" }
+      responses:
+        "200":
+          description: Classification label updated; stock quantity is returned unchanged
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ManufacturingVariantClassificationResult" }
+        "400": { description: Invalid variant ID or classification body }
+        "401": { description: Staff authentication required }
+        "404": { description: Variant not found }
+  /manufacturing/variants/{variantId}/boms:
+    get:
+      operationId: listManufacturingVariantBoms
+      tags: [manufacturing]
+      summary: List immutable BOM versions for a sellable variant
+      parameters:
+        - { name: variantId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200":
+          description: BOM versions newest first
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/ManufacturingBom" } }
+        "404": { description: Variant not found }
+    post:
+      operationId: createManufacturingVariantBom
+      tags: [manufacturing]
+      summary: Create a new immutable current BOM version
+      parameters:
+        - { name: variantId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ManufacturingBomInput" }
+      responses:
+        "201":
+          description: New current BOM version
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ManufacturingBom" }
+        "400": { description: Invalid BOM or inactive/missing component }
+        "404": { description: Variant not found }
+        "409": { description: Concurrent version conflict }
+
   /healthz:
     get:
       operationId: healthCheck
@@ -892,6 +1085,185 @@ components:
       type: http
       scheme: bearer
   schemas:
+    ManufacturingComponent:
+      type: object
+      required: [id, sku, name, type, supplierId, supplierSku, costGbp, bin, reorderLevel, targetLevel, leadDays, active, physicalBalance, createdAt, updatedAt]
+      properties:
+        id: { type: integer }
+        sku: { type: string }
+        name: { type: string }
+        type: { type: string, enum: [garment, transfer, patch, packaging, other] }
+        supplierId: { type: ["integer", "null"] }
+        supplierSku: { type: ["string", "null"] }
+        costGbp: { type: number }
+        bin: { type: ["string", "null"] }
+        reorderLevel: { type: integer }
+        targetLevel: { type: integer }
+        leadDays: { type: ["integer", "null"] }
+        active: { type: boolean }
+        physicalBalance: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    ManufacturingComponentInput:
+      type: object
+      required: [sku, name, type]
+      properties:
+        sku: { type: string, minLength: 1, maxLength: 100 }
+        name: { type: string, minLength: 1, maxLength: 250 }
+        type: { type: string, enum: [garment, transfer, patch, packaging, other] }
+        supplierId: { type: ["integer", "null"] }
+        supplierSku: { type: ["string", "null"] }
+        costGbp: { type: number, minimum: 0, default: 0 }
+        bin: { type: ["string", "null"] }
+        reorderLevel: { type: integer, minimum: 0, default: 0 }
+        targetLevel: { type: integer, minimum: 0, default: 0 }
+        leadDays: { type: ["integer", "null"], minimum: 0 }
+        active: { type: boolean, default: true }
+    ManufacturingComponentUpdate:
+      type: object
+      minProperties: 1
+      properties:
+        sku: { type: string, minLength: 1, maxLength: 100 }
+        name: { type: string, minLength: 1, maxLength: 250 }
+        type: { type: string, enum: [garment, transfer, patch, packaging, other] }
+        supplierId: { type: ["integer", "null"] }
+        supplierSku: { type: ["string", "null"] }
+        costGbp: { type: number, minimum: 0 }
+        bin: { type: ["string", "null"] }
+        reorderLevel: { type: integer, minimum: 0 }
+        targetLevel: { type: integer, minimum: 0 }
+        leadDays: { type: ["integer", "null"], minimum: 0 }
+        active: { type: boolean }
+    ManufacturingVariantClassificationInput:
+      type: object
+      additionalProperties: false
+      required: [classification]
+      description: Classification is a label/review state only; it does not transfer or change stock.
+      properties:
+        classification:
+          type: string
+          enum: [LEGACY_REVIEW, FINISHED_STOCK, COMPONENT_STOCK]
+    ManufacturingVariantClassificationResult:
+      type: object
+      additionalProperties: false
+      required: [variantId, classification, stockQuantity]
+      description: Classification label plus the unchanged legacy stock quantity.
+      properties:
+        variantId: { type: integer }
+        classification: { type: string, enum: [LEGACY_REVIEW, FINISHED_STOCK, COMPONENT_STOCK] }
+        stockQuantity: { type: integer, description: Returned unchanged; classification does not transfer stock }
+    ManufacturingOpeningBalanceInput:
+      type: object
+      required: [countedQuantity]
+      properties:
+        countedQuantity: { type: integer, minimum: 0 }
+        note: { type: ["string", "null"], maxLength: 2000 }
+    ManufacturingStocktakeInput:
+      type: object
+      required: [countedQuantity]
+      properties:
+        countedQuantity: { type: integer, minimum: 0 }
+        note: { type: ["string", "null"], maxLength: 2000 }
+    ManufacturingStockMovement:
+      type: object
+      required: [id, componentId, quantityChange, reason, actor, occurredAt, reference, note, resultingBalance]
+      properties:
+        id: { type: integer }
+        componentId: { type: integer }
+        quantityChange: { type: integer, description: Signed change; opening balance may be zero }
+        reason: { type: string, enum: [OPENING_BALANCE, STOCKTAKE_ADJUSTMENT] }
+        actor: { type: string }
+        occurredAt: { type: string, format: date-time }
+        reference: { type: ["string", "null"] }
+        note: { type: ["string", "null"] }
+        resultingBalance: { type: integer }
+    ManufacturingStocktake:
+      type: object
+      required: [id, componentId, expectedQuantity, countedQuantity, movementRevision, status, createdBy, approvedBy, createdAt, approvedAt, note]
+      properties:
+        id: { type: integer }
+        componentId: { type: integer }
+        expectedQuantity: { type: integer }
+        countedQuantity: { type: integer }
+        movementRevision: { type: integer, description: Last immutable stock movement ID observed when the draft was created; -1 denotes unknown legacy state }
+        status: { type: string, enum: [draft, approved] }
+        createdBy: { type: string }
+        approvedBy: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        approvedAt: { type: ["string", "null"], format: date-time }
+        note: { type: ["string", "null"] }
+    ManufacturingStocktakeApproval:
+      type: object
+      required: [stocktake, movement]
+      properties:
+        stocktake: { $ref: "#/components/schemas/ManufacturingStocktake" }
+        movement:
+          oneOf:
+            - { $ref: "#/components/schemas/ManufacturingStockMovement" }
+            - { type: "null" }
+    ManufacturingBomComponentInput:
+      type: object
+      required: [componentId, quantity]
+      properties:
+        componentId: { type: integer, minimum: 1 }
+        quantity: { type: integer, minimum: 1 }
+    ManufacturingBomOperationInput:
+      type: object
+      required: [method]
+      properties:
+        method: { type: string, minLength: 1, maxLength: 120 }
+        designRef: { type: ["string", "null"], maxLength: 250 }
+        position: { type: ["string", "null"], maxLength: 250 }
+        instructions: { type: ["string", "null"], maxLength: 4000 }
+        labourAllowance: { type: number, minimum: 0, default: 0 }
+        thumbnail: { type: ["string", "null"], maxLength: 2000 }
+        sortOrder: { type: integer, default: 0 }
+    ManufacturingBomInput:
+      type: object
+      required: [components]
+      properties:
+        components:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/ManufacturingBomComponentInput" }
+        operations:
+          type: array
+          items: { $ref: "#/components/schemas/ManufacturingBomOperationInput" }
+    ManufacturingBomComponent:
+      allOf:
+        - $ref: "#/components/schemas/ManufacturingBomComponentInput"
+        - type: object
+          required: [id, bomId, componentSkuSnapshot, componentNameSnapshot, unitCostGbpSnapshot]
+          properties:
+            id: { type: integer }
+            bomId: { type: integer }
+            componentSkuSnapshot: { type: string, description: Component SKU frozen when this BOM version was created }
+            componentNameSnapshot: { type: string, description: Component name frozen when this BOM version was created }
+            unitCostGbpSnapshot: { type: number, description: GBP unit cost frozen when this BOM version was created }
+    ManufacturingBomOperation:
+      allOf:
+        - $ref: "#/components/schemas/ManufacturingBomOperationInput"
+        - type: object
+          required: [id, bomId]
+          properties:
+            id: { type: integer }
+            bomId: { type: integer }
+    ManufacturingBom:
+      type: object
+      required: [id, variantId, version, isCurrent, createdBy, createdAt, components, operations]
+      properties:
+        id: { type: integer }
+        variantId: { type: integer }
+        version: { type: integer }
+        isCurrent: { type: boolean }
+        createdBy: { type: string }
+        createdAt: { type: string, format: date-time }
+        components:
+          type: array
+          items: { $ref: "#/components/schemas/ManufacturingBomComponent" }
+        operations:
+          type: array
+          items: { $ref: "#/components/schemas/ManufacturingBomOperation" }
     CallbackInput:
       type: object
       properties:

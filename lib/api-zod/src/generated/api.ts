@@ -9,6 +9,472 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary List physical manufacturing components
+ */
+export const ListManufacturingComponentsResponseItem = zod.object({
+  "id": zod.number().int(),
+  "sku": zod.string(),
+  "name": zod.string(),
+  "type": zod.enum(['garment', 'transfer', 'patch', 'packaging', 'other']),
+  "supplierId": zod.number().int().nullable(),
+  "supplierSku": zod.string().nullable(),
+  "costGbp": zod.number(),
+  "bin": zod.string().nullable(),
+  "reorderLevel": zod.number().int(),
+  "targetLevel": zod.number().int(),
+  "leadDays": zod.number().int().nullable(),
+  "active": zod.boolean(),
+  "physicalBalance": zod.number().int(),
+  "createdAt": zod.date(),
+  "updatedAt": zod.date()
+})
+export const ListManufacturingComponentsResponse = zod.array(ListManufacturingComponentsResponseItem)
+
+
+/**
+ * @summary Create a component with zero opening stock
+ */
+export const createManufacturingComponentBodySkuMax = 100;
+
+export const createManufacturingComponentBodyNameMax = 250;
+
+export const createManufacturingComponentBodyCostGbpDefault = 0;
+export const createManufacturingComponentBodyCostGbpMin = 0;
+
+export const createManufacturingComponentBodyReorderLevelDefault = 0;
+export const createManufacturingComponentBodyReorderLevelMin = 0;
+
+export const createManufacturingComponentBodyTargetLevelDefault = 0;
+export const createManufacturingComponentBodyTargetLevelMin = 0;
+
+export const createManufacturingComponentBodyLeadDaysMin = 0;
+
+export const createManufacturingComponentBodyActiveDefault = true;
+
+export const CreateManufacturingComponentBody = zod.object({
+  "sku": zod.string().min(1).max(createManufacturingComponentBodySkuMax),
+  "name": zod.string().min(1).max(createManufacturingComponentBodyNameMax),
+  "type": zod.enum(['garment', 'transfer', 'patch', 'packaging', 'other']),
+  "supplierId": zod.number().int().nullish(),
+  "supplierSku": zod.string().nullish(),
+  "costGbp": zod.number().min(createManufacturingComponentBodyCostGbpMin).default(createManufacturingComponentBodyCostGbpDefault),
+  "bin": zod.string().nullish(),
+  "reorderLevel": zod.number().int().min(createManufacturingComponentBodyReorderLevelMin).default(createManufacturingComponentBodyReorderLevelDefault),
+  "targetLevel": zod.number().int().min(createManufacturingComponentBodyTargetLevelMin).default(createManufacturingComponentBodyTargetLevelDefault),
+  "leadDays": zod.number().int().min(createManufacturingComponentBodyLeadDaysMin).nullish(),
+  "active": zod.boolean().default(createManufacturingComponentBodyActiveDefault)
+})
+
+export const CreateManufacturingComponentResponse = zod.object({
+  "id": zod.number().int(),
+  "sku": zod.string(),
+  "name": zod.string(),
+  "type": zod.enum(['garment', 'transfer', 'patch', 'packaging', 'other']),
+  "supplierId": zod.number().int().nullable(),
+  "supplierSku": zod.string().nullable(),
+  "costGbp": zod.number(),
+  "bin": zod.string().nullable(),
+  "reorderLevel": zod.number().int(),
+  "targetLevel": zod.number().int(),
+  "leadDays": zod.number().int().nullable(),
+  "active": zod.boolean(),
+  "physicalBalance": zod.number().int(),
+  "createdAt": zod.date(),
+  "updatedAt": zod.date()
+})
+
+
+/**
+ * @summary Update component metadata without changing stock
+ */
+
+
+
+export const UpdateManufacturingComponentParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const updateManufacturingComponentBodySkuMax = 100;
+
+export const updateManufacturingComponentBodyNameMax = 250;
+
+export const updateManufacturingComponentBodyCostGbpMin = 0;
+
+export const updateManufacturingComponentBodyReorderLevelMin = 0;
+
+export const updateManufacturingComponentBodyTargetLevelMin = 0;
+
+export const updateManufacturingComponentBodyLeadDaysMin = 0;
+
+
+
+export const UpdateManufacturingComponentBody = zod.object({
+  "sku": zod.string().min(1).max(updateManufacturingComponentBodySkuMax).optional(),
+  "name": zod.string().min(1).max(updateManufacturingComponentBodyNameMax).optional(),
+  "type": zod.enum(['garment', 'transfer', 'patch', 'packaging', 'other']).optional(),
+  "supplierId": zod.number().int().nullish(),
+  "supplierSku": zod.string().nullish(),
+  "costGbp": zod.number().min(updateManufacturingComponentBodyCostGbpMin).optional(),
+  "bin": zod.string().nullish(),
+  "reorderLevel": zod.number().int().min(updateManufacturingComponentBodyReorderLevelMin).optional(),
+  "targetLevel": zod.number().int().min(updateManufacturingComponentBodyTargetLevelMin).optional(),
+  "leadDays": zod.number().int().min(updateManufacturingComponentBodyLeadDaysMin).nullish(),
+  "active": zod.boolean().optional()
+})
+
+export const UpdateManufacturingComponentResponse = zod.object({
+  "id": zod.number().int(),
+  "sku": zod.string(),
+  "name": zod.string(),
+  "type": zod.enum(['garment', 'transfer', 'patch', 'packaging', 'other']),
+  "supplierId": zod.number().int().nullable(),
+  "supplierSku": zod.string().nullable(),
+  "costGbp": zod.number(),
+  "bin": zod.string().nullable(),
+  "reorderLevel": zod.number().int(),
+  "targetLevel": zod.number().int(),
+  "leadDays": zod.number().int().nullable(),
+  "active": zod.boolean(),
+  "physicalBalance": zod.number().int(),
+  "createdAt": zod.date(),
+  "updatedAt": zod.date()
+})
+
+
+/**
+ * @summary List the append-only stock ledger for a component
+ */
+
+
+
+export const ListManufacturingComponentMovementsParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const ListManufacturingComponentMovementsResponseItem = zod.object({
+  "id": zod.number().int(),
+  "componentId": zod.number().int(),
+  "quantityChange": zod.number().int().describe('Signed change; opening balance may be zero'),
+  "reason": zod.enum(['OPENING_BALANCE', 'STOCKTAKE_ADJUSTMENT']),
+  "actor": zod.string(),
+  "occurredAt": zod.date(),
+  "reference": zod.string().nullable(),
+  "note": zod.string().nullable(),
+  "resultingBalance": zod.number().int()
+})
+export const ListManufacturingComponentMovementsResponse = zod.array(ListManufacturingComponentMovementsResponseItem)
+
+
+/**
+ * @summary Record the one-time counted opening component balance
+ */
+
+
+
+export const RecordManufacturingOpeningBalanceParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const recordManufacturingOpeningBalanceBodyCountedQuantityMin = 0;
+
+export const recordManufacturingOpeningBalanceBodyNoteMax = 2000;
+
+
+
+export const RecordManufacturingOpeningBalanceBody = zod.object({
+  "countedQuantity": zod.number().int().min(recordManufacturingOpeningBalanceBodyCountedQuantityMin),
+  "note": zod.string().max(recordManufacturingOpeningBalanceBodyNoteMax).nullish()
+})
+
+export const RecordManufacturingOpeningBalanceResponse = zod.object({
+  "id": zod.number().int(),
+  "componentId": zod.number().int(),
+  "quantityChange": zod.number().int().describe('Signed change; opening balance may be zero'),
+  "reason": zod.enum(['OPENING_BALANCE', 'STOCKTAKE_ADJUSTMENT']),
+  "actor": zod.string(),
+  "occurredAt": zod.date(),
+  "reference": zod.string().nullable(),
+  "note": zod.string().nullable(),
+  "resultingBalance": zod.number().int()
+})
+
+
+/**
+ * @summary List stocktake drafts and approval history for a component
+ */
+
+
+
+export const ListManufacturingComponentStocktakesParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const ListManufacturingComponentStocktakesResponseItem = zod.object({
+  "id": zod.number().int(),
+  "componentId": zod.number().int(),
+  "expectedQuantity": zod.number().int(),
+  "countedQuantity": zod.number().int(),
+  "movementRevision": zod.number().int().describe('Last immutable stock movement ID observed when the draft was created; -1 denotes unknown legacy state'),
+  "status": zod.enum(['draft', 'approved']),
+  "createdBy": zod.string(),
+  "approvedBy": zod.string().nullable(),
+  "createdAt": zod.date(),
+  "approvedAt": zod.date().nullable(),
+  "note": zod.string().nullable()
+})
+export const ListManufacturingComponentStocktakesResponse = zod.array(ListManufacturingComponentStocktakesResponseItem)
+
+
+/**
+ * @summary Create a stocktake draft against the current expected balance
+ */
+
+
+
+export const CreateManufacturingStocktakeParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const createManufacturingStocktakeBodyCountedQuantityMin = 0;
+
+export const createManufacturingStocktakeBodyNoteMax = 2000;
+
+
+
+export const CreateManufacturingStocktakeBody = zod.object({
+  "countedQuantity": zod.number().int().min(createManufacturingStocktakeBodyCountedQuantityMin),
+  "note": zod.string().max(createManufacturingStocktakeBodyNoteMax).nullish()
+})
+
+export const CreateManufacturingStocktakeResponse = zod.object({
+  "id": zod.number().int(),
+  "componentId": zod.number().int(),
+  "expectedQuantity": zod.number().int(),
+  "countedQuantity": zod.number().int(),
+  "movementRevision": zod.number().int().describe('Last immutable stock movement ID observed when the draft was created; -1 denotes unknown legacy state'),
+  "status": zod.enum(['draft', 'approved']),
+  "createdBy": zod.string(),
+  "approvedBy": zod.string().nullable(),
+  "createdAt": zod.date(),
+  "approvedAt": zod.date().nullable(),
+  "note": zod.string().nullable()
+})
+
+
+/**
+ * @summary Approve stocktake and record its variance movement
+ */
+
+
+
+export const ApproveManufacturingStocktakeParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const ApproveManufacturingStocktakeResponse = zod.object({
+  "stocktake": zod.object({
+  "id": zod.number().int(),
+  "componentId": zod.number().int(),
+  "expectedQuantity": zod.number().int(),
+  "countedQuantity": zod.number().int(),
+  "movementRevision": zod.number().int().describe('Last immutable stock movement ID observed when the draft was created; -1 denotes unknown legacy state'),
+  "status": zod.enum(['draft', 'approved']),
+  "createdBy": zod.string(),
+  "approvedBy": zod.string().nullable(),
+  "createdAt": zod.date(),
+  "approvedAt": zod.date().nullable(),
+  "note": zod.string().nullable()
+}),
+  "movement": zod.union([zod.object({
+  "id": zod.number().int(),
+  "componentId": zod.number().int(),
+  "quantityChange": zod.number().int().describe('Signed change; opening balance may be zero'),
+  "reason": zod.enum(['OPENING_BALANCE', 'STOCKTAKE_ADJUSTMENT']),
+  "actor": zod.string(),
+  "occurredAt": zod.date(),
+  "reference": zod.string().nullable(),
+  "note": zod.string().nullable(),
+  "resultingBalance": zod.number().int()
+}),zod.null()])
+})
+
+
+/**
+ * Staff-only review/classification label. This does not transfer, rewrite, or otherwise change the variant's existing stock quantity or any component balance.
+ * @summary Set a variant's inventory classification label
+ */
+
+
+
+export const ClassifyManufacturingVariantInventoryParams = zod.object({
+  "variantId": zod.coerce.number().int().min(1)
+})
+
+export const ClassifyManufacturingVariantInventoryBody = zod.object({
+  "classification": zod.enum(['LEGACY_REVIEW', 'FINISHED_STOCK', 'COMPONENT_STOCK'])
+}).describe('Classification is a label/review state only; it does not transfer or change stock.')
+
+export const ClassifyManufacturingVariantInventoryResponse = zod.object({
+  "variantId": zod.number().int(),
+  "classification": zod.enum(['LEGACY_REVIEW', 'FINISHED_STOCK', 'COMPONENT_STOCK']),
+  "stockQuantity": zod.number().int().describe('Returned unchanged; classification does not transfer stock')
+}).describe('Classification label plus the unchanged legacy stock quantity.')
+
+
+/**
+ * @summary List immutable BOM versions for a sellable variant
+ */
+
+
+
+export const ListManufacturingVariantBomsParams = zod.object({
+  "variantId": zod.coerce.number().int().min(1)
+})
+
+
+
+export const listManufacturingVariantBomsResponseOperationsItemOneMethodMax = 120;
+
+export const listManufacturingVariantBomsResponseOperationsItemOneDesignRefMax = 250;
+
+export const listManufacturingVariantBomsResponseOperationsItemOnePositionMax = 250;
+
+export const listManufacturingVariantBomsResponseOperationsItemOneInstructionsMax = 4000;
+
+export const listManufacturingVariantBomsResponseOperationsItemOneLabourAllowanceDefault = 0;
+export const listManufacturingVariantBomsResponseOperationsItemOneLabourAllowanceMin = 0;
+
+export const listManufacturingVariantBomsResponseOperationsItemOneThumbnailMax = 2000;
+
+export const listManufacturingVariantBomsResponseOperationsItemOneSortOrderDefault = 0;
+
+export const ListManufacturingVariantBomsResponseItem = zod.object({
+  "id": zod.number().int(),
+  "variantId": zod.number().int(),
+  "version": zod.number().int(),
+  "isCurrent": zod.boolean(),
+  "createdBy": zod.string(),
+  "createdAt": zod.date(),
+  "components": zod.array(zod.object({
+  "componentId": zod.number().int().min(1),
+  "quantity": zod.number().int().min(1)
+}).and(zod.object({
+  "id": zod.number().int(),
+  "bomId": zod.number().int(),
+  "componentSkuSnapshot": zod.string().describe('Component SKU frozen when this BOM version was created'),
+  "componentNameSnapshot": zod.string().describe('Component name frozen when this BOM version was created'),
+  "unitCostGbpSnapshot": zod.number().describe('GBP unit cost frozen when this BOM version was created')
+}))),
+  "operations": zod.array(zod.object({
+  "method": zod.string().min(1).max(listManufacturingVariantBomsResponseOperationsItemOneMethodMax),
+  "designRef": zod.string().max(listManufacturingVariantBomsResponseOperationsItemOneDesignRefMax).nullish(),
+  "position": zod.string().max(listManufacturingVariantBomsResponseOperationsItemOnePositionMax).nullish(),
+  "instructions": zod.string().max(listManufacturingVariantBomsResponseOperationsItemOneInstructionsMax).nullish(),
+  "labourAllowance": zod.number().min(listManufacturingVariantBomsResponseOperationsItemOneLabourAllowanceMin).default(listManufacturingVariantBomsResponseOperationsItemOneLabourAllowanceDefault),
+  "thumbnail": zod.string().max(listManufacturingVariantBomsResponseOperationsItemOneThumbnailMax).nullish(),
+  "sortOrder": zod.number().int().default(listManufacturingVariantBomsResponseOperationsItemOneSortOrderDefault)
+}).and(zod.object({
+  "id": zod.number().int(),
+  "bomId": zod.number().int()
+})))
+})
+export const ListManufacturingVariantBomsResponse = zod.array(ListManufacturingVariantBomsResponseItem)
+
+
+/**
+ * @summary Create a new immutable current BOM version
+ */
+
+
+
+export const CreateManufacturingVariantBomParams = zod.object({
+  "variantId": zod.coerce.number().int().min(1)
+})
+
+
+
+
+export const createManufacturingVariantBomBodyOperationsItemMethodMax = 120;
+
+export const createManufacturingVariantBomBodyOperationsItemDesignRefMax = 250;
+
+export const createManufacturingVariantBomBodyOperationsItemPositionMax = 250;
+
+export const createManufacturingVariantBomBodyOperationsItemInstructionsMax = 4000;
+
+export const createManufacturingVariantBomBodyOperationsItemLabourAllowanceDefault = 0;
+export const createManufacturingVariantBomBodyOperationsItemLabourAllowanceMin = 0;
+
+export const createManufacturingVariantBomBodyOperationsItemThumbnailMax = 2000;
+
+export const createManufacturingVariantBomBodyOperationsItemSortOrderDefault = 0;
+
+export const CreateManufacturingVariantBomBody = zod.object({
+  "components": zod.array(zod.object({
+  "componentId": zod.number().int().min(1),
+  "quantity": zod.number().int().min(1)
+})).min(1),
+  "operations": zod.array(zod.object({
+  "method": zod.string().min(1).max(createManufacturingVariantBomBodyOperationsItemMethodMax),
+  "designRef": zod.string().max(createManufacturingVariantBomBodyOperationsItemDesignRefMax).nullish(),
+  "position": zod.string().max(createManufacturingVariantBomBodyOperationsItemPositionMax).nullish(),
+  "instructions": zod.string().max(createManufacturingVariantBomBodyOperationsItemInstructionsMax).nullish(),
+  "labourAllowance": zod.number().min(createManufacturingVariantBomBodyOperationsItemLabourAllowanceMin).default(createManufacturingVariantBomBodyOperationsItemLabourAllowanceDefault),
+  "thumbnail": zod.string().max(createManufacturingVariantBomBodyOperationsItemThumbnailMax).nullish(),
+  "sortOrder": zod.number().int().default(createManufacturingVariantBomBodyOperationsItemSortOrderDefault)
+})).optional()
+})
+
+
+
+export const createManufacturingVariantBomResponseOperationsItemOneMethodMax = 120;
+
+export const createManufacturingVariantBomResponseOperationsItemOneDesignRefMax = 250;
+
+export const createManufacturingVariantBomResponseOperationsItemOnePositionMax = 250;
+
+export const createManufacturingVariantBomResponseOperationsItemOneInstructionsMax = 4000;
+
+export const createManufacturingVariantBomResponseOperationsItemOneLabourAllowanceDefault = 0;
+export const createManufacturingVariantBomResponseOperationsItemOneLabourAllowanceMin = 0;
+
+export const createManufacturingVariantBomResponseOperationsItemOneThumbnailMax = 2000;
+
+export const createManufacturingVariantBomResponseOperationsItemOneSortOrderDefault = 0;
+
+export const CreateManufacturingVariantBomResponse = zod.object({
+  "id": zod.number().int(),
+  "variantId": zod.number().int(),
+  "version": zod.number().int(),
+  "isCurrent": zod.boolean(),
+  "createdBy": zod.string(),
+  "createdAt": zod.date(),
+  "components": zod.array(zod.object({
+  "componentId": zod.number().int().min(1),
+  "quantity": zod.number().int().min(1)
+}).and(zod.object({
+  "id": zod.number().int(),
+  "bomId": zod.number().int(),
+  "componentSkuSnapshot": zod.string().describe('Component SKU frozen when this BOM version was created'),
+  "componentNameSnapshot": zod.string().describe('Component name frozen when this BOM version was created'),
+  "unitCostGbpSnapshot": zod.number().describe('GBP unit cost frozen when this BOM version was created')
+}))),
+  "operations": zod.array(zod.object({
+  "method": zod.string().min(1).max(createManufacturingVariantBomResponseOperationsItemOneMethodMax),
+  "designRef": zod.string().max(createManufacturingVariantBomResponseOperationsItemOneDesignRefMax).nullish(),
+  "position": zod.string().max(createManufacturingVariantBomResponseOperationsItemOnePositionMax).nullish(),
+  "instructions": zod.string().max(createManufacturingVariantBomResponseOperationsItemOneInstructionsMax).nullish(),
+  "labourAllowance": zod.number().min(createManufacturingVariantBomResponseOperationsItemOneLabourAllowanceMin).default(createManufacturingVariantBomResponseOperationsItemOneLabourAllowanceDefault),
+  "thumbnail": zod.string().max(createManufacturingVariantBomResponseOperationsItemOneThumbnailMax).nullish(),
+  "sortOrder": zod.number().int().default(createManufacturingVariantBomResponseOperationsItemOneSortOrderDefault)
+}).and(zod.object({
+  "id": zod.number().int(),
+  "bomId": zod.number().int()
+})))
+})
+
+
+/**
  * Returns server health status
  * @summary Health check
  */

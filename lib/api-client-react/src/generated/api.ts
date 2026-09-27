@@ -48,6 +48,18 @@ import type {
   ListProductsParams,
   ListShopProductsParams,
   ListSuppliersParams,
+  ManufacturingBom,
+  ManufacturingBomInput,
+  ManufacturingComponent,
+  ManufacturingComponentInput,
+  ManufacturingComponentUpdate,
+  ManufacturingOpeningBalanceInput,
+  ManufacturingStockMovement,
+  ManufacturingStocktake,
+  ManufacturingStocktakeApproval,
+  ManufacturingStocktakeInput,
+  ManufacturingVariantClassificationInput,
+  ManufacturingVariantClassificationResult,
   Order,
   OrderDetail,
   OrderItem,
@@ -94,6 +106,1018 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getListManufacturingComponentsUrl = () => {
+
+
+
+
+  return `/api/manufacturing/components`
+}
+
+/**
+ * @summary List physical manufacturing components
+ */
+export const listManufacturingComponents = async ( options?: Parameters<typeof customFetch>[1]): Promise<ManufacturingComponent[]> => {
+
+  return customFetch<ManufacturingComponent[]>(getListManufacturingComponentsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListManufacturingComponentsQueryKey = () => {
+    return [
+    `/api/manufacturing/components`
+    ] as const;
+    }
+
+
+export const getListManufacturingComponentsQueryOptions = <TData = Awaited<ReturnType<typeof listManufacturingComponents>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listManufacturingComponents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListManufacturingComponentsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listManufacturingComponents>>> = ({ signal }) => listManufacturingComponents({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listManufacturingComponents>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListManufacturingComponentsQueryResult = NonNullable<Awaited<ReturnType<typeof listManufacturingComponents>>>
+export type ListManufacturingComponentsQueryError = ErrorType<unknown>
+
+
+export function useListManufacturingComponents<TData = Awaited<ReturnType<typeof listManufacturingComponents>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listManufacturingComponents>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listManufacturingComponents>>,
+          TError,
+          Awaited<ReturnType<typeof listManufacturingComponents>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListManufacturingComponents<TData = Awaited<ReturnType<typeof listManufacturingComponents>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listManufacturingComponents>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listManufacturingComponents>>,
+          TError,
+          Awaited<ReturnType<typeof listManufacturingComponents>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListManufacturingComponents<TData = Awaited<ReturnType<typeof listManufacturingComponents>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listManufacturingComponents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List physical manufacturing components
+ */
+
+export function useListManufacturingComponents<TData = Awaited<ReturnType<typeof listManufacturingComponents>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listManufacturingComponents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListManufacturingComponentsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateManufacturingComponentUrl = () => {
+
+
+
+
+  return `/api/manufacturing/components`
+}
+
+/**
+ * @summary Create a component with zero opening stock
+ */
+export const createManufacturingComponent = async (manufacturingComponentInput: ManufacturingComponentInput, options?: Parameters<typeof customFetch>[1]): Promise<ManufacturingComponent> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ManufacturingComponent>(getCreateManufacturingComponentUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(manufacturingComponentInput)
+  }
+);}
+
+
+
+
+
+export const getCreateManufacturingComponentMutationKey = () => ['createManufacturingComponent'] as const;
+
+export const getCreateManufacturingComponentMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createManufacturingComponent>>, TError,CreateManufacturingComponentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createManufacturingComponent>>, TError,CreateManufacturingComponentMutationVariables, TContext> => {
+
+const mutationKey = getCreateManufacturingComponentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createManufacturingComponent>>, CreateManufacturingComponentMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createManufacturingComponent(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateManufacturingComponentMutationResult = NonNullable<Awaited<ReturnType<typeof createManufacturingComponent>>>
+    export type CreateManufacturingComponentMutationBody = BodyType<ManufacturingComponentInput>
+    export type CreateManufacturingComponentMutationError = ErrorType<void>
+    export type CreateManufacturingComponentMutationVariables = {data: BodyType<ManufacturingComponentInput>}
+
+    /**
+ * @summary Create a component with zero opening stock
+ */
+export const useCreateManufacturingComponent = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createManufacturingComponent>>, TError,CreateManufacturingComponentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createManufacturingComponent>>,
+        TError,
+        CreateManufacturingComponentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateManufacturingComponentMutationOptions(options), queryClient);
+    }
+
+export const getUpdateManufacturingComponentUrl = (id: number,) => {
+
+
+
+
+  return `/api/manufacturing/components/${id}`
+}
+
+/**
+ * @summary Update component metadata without changing stock
+ */
+export const updateManufacturingComponent = async (id: number,
+    manufacturingComponentUpdate: ManufacturingComponentUpdate, options?: Parameters<typeof customFetch>[1]): Promise<ManufacturingComponent> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ManufacturingComponent>(getUpdateManufacturingComponentUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(manufacturingComponentUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateManufacturingComponentMutationKey = () => ['updateManufacturingComponent'] as const;
+
+export const getUpdateManufacturingComponentMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateManufacturingComponent>>, TError,UpdateManufacturingComponentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateManufacturingComponent>>, TError,UpdateManufacturingComponentMutationVariables, TContext> => {
+
+const mutationKey = getUpdateManufacturingComponentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateManufacturingComponent>>, UpdateManufacturingComponentMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateManufacturingComponent(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateManufacturingComponentMutationResult = NonNullable<Awaited<ReturnType<typeof updateManufacturingComponent>>>
+    export type UpdateManufacturingComponentMutationBody = BodyType<ManufacturingComponentUpdate>
+    export type UpdateManufacturingComponentMutationError = ErrorType<void>
+    export type UpdateManufacturingComponentMutationVariables = {id: number;data: BodyType<ManufacturingComponentUpdate>}
+
+    /**
+ * @summary Update component metadata without changing stock
+ */
+export const useUpdateManufacturingComponent = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateManufacturingComponent>>, TError,UpdateManufacturingComponentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateManufacturingComponent>>,
+        TError,
+        UpdateManufacturingComponentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateManufacturingComponentMutationOptions(options), queryClient);
+    }
+
+export const getListManufacturingComponentMovementsUrl = (id: number,) => {
+
+
+
+
+  return `/api/manufacturing/components/${id}/movements`
+}
+
+/**
+ * @summary List the append-only stock ledger for a component
+ */
+export const listManufacturingComponentMovements = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<ManufacturingStockMovement[]> => {
+
+  return customFetch<ManufacturingStockMovement[]>(getListManufacturingComponentMovementsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListManufacturingComponentMovementsQueryKey = (id: number,) => {
+    return [
+    `/api/manufacturing/components/${id}/movements`
+    ] as const;
+    }
+
+
+export const getListManufacturingComponentMovementsQueryOptions = <TData = Awaited<ReturnType<typeof listManufacturingComponentMovements>>, TError = ErrorType<void>>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listManufacturingComponentMovements>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListManufacturingComponentMovementsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listManufacturingComponentMovements>>> = ({ signal }) => listManufacturingComponentMovements(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listManufacturingComponentMovements>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListManufacturingComponentMovementsQueryResult = NonNullable<Awaited<ReturnType<typeof listManufacturingComponentMovements>>>
+export type ListManufacturingComponentMovementsQueryError = ErrorType<void>
+
+
+export function useListManufacturingComponentMovements<TData = Awaited<ReturnType<typeof listManufacturingComponentMovements>>, TError = ErrorType<void>>(
+ id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listManufacturingComponentMovements>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listManufacturingComponentMovements>>,
+          TError,
+          Awaited<ReturnType<typeof listManufacturingComponentMovements>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListManufacturingComponentMovements<TData = Awaited<ReturnType<typeof listManufacturingComponentMovements>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listManufacturingComponentMovements>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listManufacturingComponentMovements>>,
+          TError,
+          Awaited<ReturnType<typeof listManufacturingComponentMovements>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListManufacturingComponentMovements<TData = Awaited<ReturnType<typeof listManufacturingComponentMovements>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listManufacturingComponentMovements>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List the append-only stock ledger for a component
+ */
+
+export function useListManufacturingComponentMovements<TData = Awaited<ReturnType<typeof listManufacturingComponentMovements>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listManufacturingComponentMovements>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListManufacturingComponentMovementsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRecordManufacturingOpeningBalanceUrl = (id: number,) => {
+
+
+
+
+  return `/api/manufacturing/components/${id}/opening-balance`
+}
+
+/**
+ * @summary Record the one-time counted opening component balance
+ */
+export const recordManufacturingOpeningBalance = async (id: number,
+    manufacturingOpeningBalanceInput: ManufacturingOpeningBalanceInput, options?: Parameters<typeof customFetch>[1]): Promise<ManufacturingStockMovement> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ManufacturingStockMovement>(getRecordManufacturingOpeningBalanceUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(manufacturingOpeningBalanceInput)
+  }
+);}
+
+
+
+
+
+export const getRecordManufacturingOpeningBalanceMutationKey = () => ['recordManufacturingOpeningBalance'] as const;
+
+export const getRecordManufacturingOpeningBalanceMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordManufacturingOpeningBalance>>, TError,RecordManufacturingOpeningBalanceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordManufacturingOpeningBalance>>, TError,RecordManufacturingOpeningBalanceMutationVariables, TContext> => {
+
+const mutationKey = getRecordManufacturingOpeningBalanceMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordManufacturingOpeningBalance>>, RecordManufacturingOpeningBalanceMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  recordManufacturingOpeningBalance(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordManufacturingOpeningBalanceMutationResult = NonNullable<Awaited<ReturnType<typeof recordManufacturingOpeningBalance>>>
+    export type RecordManufacturingOpeningBalanceMutationBody = BodyType<ManufacturingOpeningBalanceInput>
+    export type RecordManufacturingOpeningBalanceMutationError = ErrorType<void>
+    export type RecordManufacturingOpeningBalanceMutationVariables = {id: number;data: BodyType<ManufacturingOpeningBalanceInput>}
+
+    /**
+ * @summary Record the one-time counted opening component balance
+ */
+export const useRecordManufacturingOpeningBalance = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordManufacturingOpeningBalance>>, TError,RecordManufacturingOpeningBalanceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof recordManufacturingOpeningBalance>>,
+        TError,
+        RecordManufacturingOpeningBalanceMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordManufacturingOpeningBalanceMutationOptions(options), queryClient);
+    }
+
+export const getListManufacturingComponentStocktakesUrl = (id: number,) => {
+
+
+
+
+  return `/api/manufacturing/components/${id}/stocktakes`
+}
+
+/**
+ * @summary List stocktake drafts and approval history for a component
+ */
+export const listManufacturingComponentStocktakes = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<ManufacturingStocktake[]> => {
+
+  return customFetch<ManufacturingStocktake[]>(getListManufacturingComponentStocktakesUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListManufacturingComponentStocktakesQueryKey = (id: number,) => {
+    return [
+    `/api/manufacturing/components/${id}/stocktakes`
+    ] as const;
+    }
+
+
+export const getListManufacturingComponentStocktakesQueryOptions = <TData = Awaited<ReturnType<typeof listManufacturingComponentStocktakes>>, TError = ErrorType<void>>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listManufacturingComponentStocktakes>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListManufacturingComponentStocktakesQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listManufacturingComponentStocktakes>>> = ({ signal }) => listManufacturingComponentStocktakes(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listManufacturingComponentStocktakes>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListManufacturingComponentStocktakesQueryResult = NonNullable<Awaited<ReturnType<typeof listManufacturingComponentStocktakes>>>
+export type ListManufacturingComponentStocktakesQueryError = ErrorType<void>
+
+
+export function useListManufacturingComponentStocktakes<TData = Awaited<ReturnType<typeof listManufacturingComponentStocktakes>>, TError = ErrorType<void>>(
+ id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listManufacturingComponentStocktakes>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listManufacturingComponentStocktakes>>,
+          TError,
+          Awaited<ReturnType<typeof listManufacturingComponentStocktakes>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListManufacturingComponentStocktakes<TData = Awaited<ReturnType<typeof listManufacturingComponentStocktakes>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listManufacturingComponentStocktakes>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listManufacturingComponentStocktakes>>,
+          TError,
+          Awaited<ReturnType<typeof listManufacturingComponentStocktakes>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListManufacturingComponentStocktakes<TData = Awaited<ReturnType<typeof listManufacturingComponentStocktakes>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listManufacturingComponentStocktakes>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List stocktake drafts and approval history for a component
+ */
+
+export function useListManufacturingComponentStocktakes<TData = Awaited<ReturnType<typeof listManufacturingComponentStocktakes>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listManufacturingComponentStocktakes>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListManufacturingComponentStocktakesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateManufacturingStocktakeUrl = (id: number,) => {
+
+
+
+
+  return `/api/manufacturing/components/${id}/stocktakes`
+}
+
+/**
+ * @summary Create a stocktake draft against the current expected balance
+ */
+export const createManufacturingStocktake = async (id: number,
+    manufacturingStocktakeInput: ManufacturingStocktakeInput, options?: Parameters<typeof customFetch>[1]): Promise<ManufacturingStocktake> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ManufacturingStocktake>(getCreateManufacturingStocktakeUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(manufacturingStocktakeInput)
+  }
+);}
+
+
+
+
+
+export const getCreateManufacturingStocktakeMutationKey = () => ['createManufacturingStocktake'] as const;
+
+export const getCreateManufacturingStocktakeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createManufacturingStocktake>>, TError,CreateManufacturingStocktakeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createManufacturingStocktake>>, TError,CreateManufacturingStocktakeMutationVariables, TContext> => {
+
+const mutationKey = getCreateManufacturingStocktakeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createManufacturingStocktake>>, CreateManufacturingStocktakeMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createManufacturingStocktake(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateManufacturingStocktakeMutationResult = NonNullable<Awaited<ReturnType<typeof createManufacturingStocktake>>>
+    export type CreateManufacturingStocktakeMutationBody = BodyType<ManufacturingStocktakeInput>
+    export type CreateManufacturingStocktakeMutationError = ErrorType<void>
+    export type CreateManufacturingStocktakeMutationVariables = {id: number;data: BodyType<ManufacturingStocktakeInput>}
+
+    /**
+ * @summary Create a stocktake draft against the current expected balance
+ */
+export const useCreateManufacturingStocktake = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createManufacturingStocktake>>, TError,CreateManufacturingStocktakeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createManufacturingStocktake>>,
+        TError,
+        CreateManufacturingStocktakeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateManufacturingStocktakeMutationOptions(options), queryClient);
+    }
+
+export const getApproveManufacturingStocktakeUrl = (id: number,) => {
+
+
+
+
+  return `/api/manufacturing/stocktakes/${id}/approve`
+}
+
+/**
+ * @summary Approve stocktake and record its variance movement
+ */
+export const approveManufacturingStocktake = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<ManufacturingStocktakeApproval> => {
+
+  return customFetch<ManufacturingStocktakeApproval>(getApproveManufacturingStocktakeUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getApproveManufacturingStocktakeMutationKey = () => ['approveManufacturingStocktake'] as const;
+
+export const getApproveManufacturingStocktakeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveManufacturingStocktake>>, TError,ApproveManufacturingStocktakeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof approveManufacturingStocktake>>, TError,ApproveManufacturingStocktakeMutationVariables, TContext> => {
+
+const mutationKey = getApproveManufacturingStocktakeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof approveManufacturingStocktake>>, ApproveManufacturingStocktakeMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  approveManufacturingStocktake(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApproveManufacturingStocktakeMutationResult = NonNullable<Awaited<ReturnType<typeof approveManufacturingStocktake>>>
+
+    export type ApproveManufacturingStocktakeMutationError = ErrorType<void>
+    export type ApproveManufacturingStocktakeMutationVariables = {id: number}
+
+    /**
+ * @summary Approve stocktake and record its variance movement
+ */
+export const useApproveManufacturingStocktake = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveManufacturingStocktake>>, TError,ApproveManufacturingStocktakeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof approveManufacturingStocktake>>,
+        TError,
+        ApproveManufacturingStocktakeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getApproveManufacturingStocktakeMutationOptions(options), queryClient);
+    }
+
+export const getClassifyManufacturingVariantInventoryUrl = (variantId: number,) => {
+
+
+
+
+  return `/api/manufacturing/variants/${variantId}/classification`
+}
+
+/**
+ * Staff-only review/classification label. This does not transfer, rewrite, or otherwise change the variant's existing stock quantity or any component balance.
+ * @summary Set a variant's inventory classification label
+ */
+export const classifyManufacturingVariantInventory = async (variantId: number,
+    manufacturingVariantClassificationInput: ManufacturingVariantClassificationInput, options?: Parameters<typeof customFetch>[1]): Promise<ManufacturingVariantClassificationResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ManufacturingVariantClassificationResult>(getClassifyManufacturingVariantInventoryUrl(variantId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(manufacturingVariantClassificationInput)
+  }
+);}
+
+
+
+
+
+export const getClassifyManufacturingVariantInventoryMutationKey = () => ['classifyManufacturingVariantInventory'] as const;
+
+export const getClassifyManufacturingVariantInventoryMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof classifyManufacturingVariantInventory>>, TError,ClassifyManufacturingVariantInventoryMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof classifyManufacturingVariantInventory>>, TError,ClassifyManufacturingVariantInventoryMutationVariables, TContext> => {
+
+const mutationKey = getClassifyManufacturingVariantInventoryMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof classifyManufacturingVariantInventory>>, ClassifyManufacturingVariantInventoryMutationVariables> = (props) => {
+          const {variantId,data} = props ?? {};
+
+          return  classifyManufacturingVariantInventory(variantId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ClassifyManufacturingVariantInventoryMutationResult = NonNullable<Awaited<ReturnType<typeof classifyManufacturingVariantInventory>>>
+    export type ClassifyManufacturingVariantInventoryMutationBody = BodyType<ManufacturingVariantClassificationInput>
+    export type ClassifyManufacturingVariantInventoryMutationError = ErrorType<void>
+    export type ClassifyManufacturingVariantInventoryMutationVariables = {variantId: number;data: BodyType<ManufacturingVariantClassificationInput>}
+
+    /**
+ * @summary Set a variant's inventory classification label
+ */
+export const useClassifyManufacturingVariantInventory = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof classifyManufacturingVariantInventory>>, TError,ClassifyManufacturingVariantInventoryMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof classifyManufacturingVariantInventory>>,
+        TError,
+        ClassifyManufacturingVariantInventoryMutationVariables,
+        TContext
+      > => {
+      return useMutation(getClassifyManufacturingVariantInventoryMutationOptions(options), queryClient);
+    }
+
+export const getListManufacturingVariantBomsUrl = (variantId: number,) => {
+
+
+
+
+  return `/api/manufacturing/variants/${variantId}/boms`
+}
+
+/**
+ * @summary List immutable BOM versions for a sellable variant
+ */
+export const listManufacturingVariantBoms = async (variantId: number, options?: Parameters<typeof customFetch>[1]): Promise<ManufacturingBom[]> => {
+
+  return customFetch<ManufacturingBom[]>(getListManufacturingVariantBomsUrl(variantId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListManufacturingVariantBomsQueryKey = (variantId: number,) => {
+    return [
+    `/api/manufacturing/variants/${variantId}/boms`
+    ] as const;
+    }
+
+
+export const getListManufacturingVariantBomsQueryOptions = <TData = Awaited<ReturnType<typeof listManufacturingVariantBoms>>, TError = ErrorType<void>>(variantId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listManufacturingVariantBoms>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListManufacturingVariantBomsQueryKey(variantId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listManufacturingVariantBoms>>> = ({ signal }) => listManufacturingVariantBoms(variantId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: variantId !== null && variantId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listManufacturingVariantBoms>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListManufacturingVariantBomsQueryResult = NonNullable<Awaited<ReturnType<typeof listManufacturingVariantBoms>>>
+export type ListManufacturingVariantBomsQueryError = ErrorType<void>
+
+
+export function useListManufacturingVariantBoms<TData = Awaited<ReturnType<typeof listManufacturingVariantBoms>>, TError = ErrorType<void>>(
+ variantId: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listManufacturingVariantBoms>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listManufacturingVariantBoms>>,
+          TError,
+          Awaited<ReturnType<typeof listManufacturingVariantBoms>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListManufacturingVariantBoms<TData = Awaited<ReturnType<typeof listManufacturingVariantBoms>>, TError = ErrorType<void>>(
+ variantId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listManufacturingVariantBoms>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listManufacturingVariantBoms>>,
+          TError,
+          Awaited<ReturnType<typeof listManufacturingVariantBoms>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListManufacturingVariantBoms<TData = Awaited<ReturnType<typeof listManufacturingVariantBoms>>, TError = ErrorType<void>>(
+ variantId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listManufacturingVariantBoms>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List immutable BOM versions for a sellable variant
+ */
+
+export function useListManufacturingVariantBoms<TData = Awaited<ReturnType<typeof listManufacturingVariantBoms>>, TError = ErrorType<void>>(
+ variantId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listManufacturingVariantBoms>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListManufacturingVariantBomsQueryOptions(variantId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateManufacturingVariantBomUrl = (variantId: number,) => {
+
+
+
+
+  return `/api/manufacturing/variants/${variantId}/boms`
+}
+
+/**
+ * @summary Create a new immutable current BOM version
+ */
+export const createManufacturingVariantBom = async (variantId: number,
+    manufacturingBomInput: ManufacturingBomInput, options?: Parameters<typeof customFetch>[1]): Promise<ManufacturingBom> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ManufacturingBom>(getCreateManufacturingVariantBomUrl(variantId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(manufacturingBomInput)
+  }
+);}
+
+
+
+
+
+export const getCreateManufacturingVariantBomMutationKey = () => ['createManufacturingVariantBom'] as const;
+
+export const getCreateManufacturingVariantBomMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createManufacturingVariantBom>>, TError,CreateManufacturingVariantBomMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createManufacturingVariantBom>>, TError,CreateManufacturingVariantBomMutationVariables, TContext> => {
+
+const mutationKey = getCreateManufacturingVariantBomMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createManufacturingVariantBom>>, CreateManufacturingVariantBomMutationVariables> = (props) => {
+          const {variantId,data} = props ?? {};
+
+          return  createManufacturingVariantBom(variantId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateManufacturingVariantBomMutationResult = NonNullable<Awaited<ReturnType<typeof createManufacturingVariantBom>>>
+    export type CreateManufacturingVariantBomMutationBody = BodyType<ManufacturingBomInput>
+    export type CreateManufacturingVariantBomMutationError = ErrorType<void>
+    export type CreateManufacturingVariantBomMutationVariables = {variantId: number;data: BodyType<ManufacturingBomInput>}
+
+    /**
+ * @summary Create a new immutable current BOM version
+ */
+export const useCreateManufacturingVariantBom = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createManufacturingVariantBom>>, TError,CreateManufacturingVariantBomMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createManufacturingVariantBom>>,
+        TError,
+        CreateManufacturingVariantBomMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateManufacturingVariantBomMutationOptions(options), queryClient);
+    }
 
 export const getHealthCheckUrl = () => {
 

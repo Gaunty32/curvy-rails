@@ -1,0 +1,1 @@
+- [Inventory reconciliation safety](inventory-reconciliation.md) — stale stocktakes need movement-history checks, even when the current balance matches the draft.

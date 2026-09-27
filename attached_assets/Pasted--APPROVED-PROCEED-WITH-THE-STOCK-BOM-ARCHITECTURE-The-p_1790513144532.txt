@@ -1,0 +1,723 @@
+# APPROVED — PROCEED WITH THE STOCK / BOM ARCHITECTURE
+
+The proposed architecture is approved.
+
+You have correctly understood the fundamental model:
+
+**SELLABLE PRODUCT ≠ NECESSARILY A STOCKED FINISHED PRODUCT**
+
+For our core website range we will predominantly stock:
+
+**BLANK GARMENTS + DECORATION COMPONENTS**
+
+and manufacture the finished item after the customer orders.
+
+Please proceed on the following basis.
+
+## 1. EXISTING SYSTEM
+
+Reuse and extend the existing:
+
+* product/variant management
+* supplier functionality
+* purchase orders
+* partial PO receipts
+* picking
+* worksheets
+* despatch
+* order allocation
+
+Do not create a parallel operational system where the existing functionality can safely be extended.
+
+Preserve existing historical data.
+
+---
+
+# 2. BOM MODEL — APPROVED
+
+Proceed with a separate manufacturing BOM model.
+
+A sellable variant can require:
+
+* one or more physical components
+* one or more production operations
+* packaging where appropriate
+
+Physical components include things such as:
+
+* blank garments
+* DTF transfers
+* patches/badges
+* packaging
+
+Non-stock production requirements include things such as:
+
+* embroidery design
+* embroidery position
+* heat press operation
+* application position
+* production instructions
+
+Do NOT pretend an embroidery design is physical inventory.
+
+---
+
+# 3. SHARED COMPONENTS — ESSENTIAL
+
+Shared component inventory is fundamental.
+
+For example:
+
+**Black Hoodie Size 22**
+
+may be used to produce 20 different website designs.
+
+There must be ONE underlying blank stock balance.
+
+Do not create separate blank inventory for each sellable design.
+
+Likewise, a transfer may be shared across multiple garment products where appropriate.
+
+---
+
+# 4. OUR STOCK PHILOSOPHY
+
+Our objective is:
+
+# HOLD BLANKS AND DECORATION — NOT FINISHED GARMENTS.
+
+We want to maintain sufficient blank/component stock to allow the majority of website orders to move immediately into production.
+
+The operational target is:
+
+**ORDER TODAY → PRODUCE QUICKLY → DESPATCH QUICKLY**
+
+Therefore stock management should eventually help us optimise component holding based on actual demand.
+
+---
+
+# 5. ORDER-TO-REPLENISH POLICY
+
+Use two distinct concepts:
+
+## A. READY TO PRODUCE
+
+All required physical components are currently available.
+
+The order can immediately proceed.
+
+## B. AVAILABLE TO ORDER
+
+One or more components are not currently available, BUT the product has explicitly been configured to allow ordering against replenishment.
+
+This must be a deliberate admin setting.
+
+Do NOT automatically allow every out-of-stock component to be sold.
+
+Each component/product should eventually support appropriate lead-time information.
+
+If a customer orders something requiring replenishment, the promised customer delivery expectation must reflect this.
+
+---
+
+# 6. WEBSITE AVAILABILITY
+
+For products configured as READY TO PRODUCE only:
+
+Website availability is constrained by the lowest available required physical component.
+
+Example:
+
+Black Hoodie Size 22 = 6 available
+
+Good Vibes Transfer = 23 available
+
+Immediate producible quantity:
+
+**6**
+
+However, because the blank is shared by multiple designs, do NOT imply that six units are independently available for every design.
+
+All confirmed orders/holds must compete for the same underlying component inventory.
+
+---
+
+# 7. CHECKOUT RESERVATION
+
+Proceed with component-level temporary reservations during checkout.
+
+The reservation should have a configurable expiry.
+
+Successful payment:
+
+TEMPORARY HOLD
+
+→
+
+CONFIRMED ALLOCATION
+
+Failed/abandoned payment:
+
+TEMPORARY HOLD
+
+→
+
+RELEASED
+
+Payment callbacks must be idempotent.
+
+A duplicated payment callback must never:
+
+* create another order
+* allocate stock twice
+* consume stock twice.
+
+---
+
+# 8. CONFIRMED ORDER
+
+On confirmed payment:
+
+1. Snapshot the BOM used at the point of sale.
+2. Snapshot the production operations/instructions.
+3. Allocate available physical components.
+4. Calculate any shortfall.
+5. Create the production job.
+6. Determine whether the job is READY or WAITING FOR COMPONENTS.
+7. Add shortages to purchasing requirements.
+
+Historical orders must retain their original BOM even if the product BOM is subsequently changed.
+
+This is important.
+
+---
+
+# 9. PURCHASING — IMPORTANT DECISION
+
+Purchasing must distinguish between:
+
+## CUSTOMER SHORTFALL
+
+Stock required to fulfil an actual paid order.
+
+This is highest priority.
+
+and:
+
+## REPLENISHMENT
+
+Stock required to return inventory to our preferred holding level.
+
+Example:
+
+Confirmed orders require: 8
+
+Available stock: 5
+
+Incoming confirmed PO: 0
+
+Customer shortfall: 3
+
+Target stock after fulfilment: 12
+
+Suggested purchase:
+
+**15**
+
+Broken down visibly as:
+
+**3 — customer orders**
+
+**12 — stock replenishment**
+
+Staff must be able to amend this before creating/approving the PO.
+
+---
+
+# 10. EXISTING INCOMING STOCK
+
+Confirmed incoming PO quantities must be considered.
+
+Do not suggest purchasing the same requirement twice.
+
+Example:
+
+Shortfall = 10
+
+Already ordered from supplier = 8
+
+Additional requirement = 2
+
+The dashboard should make this obvious.
+
+---
+
+# 11. GOODS IN
+
+Extend the existing PO receipt workflow.
+
+When components arrive:
+
+RECEIVE GOODS
+
+↓
+
+Increase physical component stock
+
+↓
+
+Update incoming stock
+
+↓
+
+Reassess allocations/shortfalls
+
+↓
+
+Allocate newly available components to waiting confirmed orders
+
+↓
+
+Production jobs that now have everything required become:
+
+# READY TO PRODUCE
+
+Prioritise older/due confirmed orders when allocating newly received stock.
+
+---
+
+# 12. EXISTING FINISHED STOCK
+
+Do NOT automatically reinterpret existing variant stock as component stock.
+
+Preserve existing quantities/history.
+
+During migration, classify inventory explicitly as appropriate:
+
+* FINISHED STOCK
+* COMPONENT STOCK
+* LEGACY / REQUIRES REVIEW
+
+We will reconcile opening component balances before the new component stock becomes authoritative.
+
+Do not destroy or silently transform historical inventory.
+
+---
+
+# 13. PRODUCTION
+
+Proceed with:
+
+WAITING FOR COMPONENTS
+
+↓
+
+READY TO PRODUCE
+
+↓
+
+PICKING
+
+↓
+
+PICKED
+
+↓
+
+IN PRODUCTION
+
+↓
+
+QUALITY CHECK
+
+↓
+
+READY FOR DESPATCH
+
+↓
+
+DESPATCHED / COMPLETE
+
+Keep exceptions/rework explicit.
+
+---
+
+# 14. PRODUCTION WORKSHEET
+
+This needs to be exceptionally simple.
+
+The person producing the order should not need to understand the website order or BOM.
+
+The worksheet should tell them:
+
+# WHAT TO MAKE
+
+Order number
+
+Customer/order reference
+
+Product image
+
+Garment
+
+Colour
+
+Size
+
+Quantity
+
+# WHAT TO APPLY
+
+Decoration image/thumbnail
+
+Decoration reference
+
+Method
+
+Position
+
+Any production-specific instructions
+
+Include a job barcode/QR-ready identifier.
+
+Do NOT clutter the worksheet with:
+
+* customer pricing
+* supplier pricing
+* marketing information
+* irrelevant order data.
+
+---
+
+# 15. BATCHING
+
+Build the data model to support production batching.
+
+Initially this can be suggested rather than fully automated.
+
+Examples:
+
+### DTF
+
+Group compatible work by:
+
+* transfer/design
+* application method
+* position
+
+### EMBROIDERY
+
+Group compatible work by:
+
+* embroidery design
+* thread setup
+* position
+* suitable machine
+
+However, each physical item must retain its:
+
+order
+
+order line
+
+production job
+
+customer traceability.
+
+---
+
+# 16. PRODUCTION FAILURE
+
+If production damages a component:
+
+Example:
+
+Operator damages Black Hoodie Size 22 while applying transfer.
+
+Record:
+
+PRODUCTION DAMAGE
+
+Physical blank stock reduces by 1.
+
+The original order still requires one completed hoodie.
+
+Therefore:
+
+allocate another blank if available
+
+OR
+
+create/reveal a component shortfall.
+
+Likewise, if the transfer has been destroyed, consume/damage that transfer appropriately and require another.
+
+Never hide these failures by manually changing stock quantities.
+
+---
+
+# 17. QC
+
+QC should be quick:
+
+**PASS**
+
+or
+
+**PROBLEM**
+
+PASS:
+
+→ READY FOR DESPATCH
+
+PROBLEM:
+
+→ appropriate rework/exception route.
+
+Record who performed QC and when.
+
+---
+
+# 18. DESPATCH
+
+Only allow an order to move to READY FOR DESPATCH once all required order items have passed the necessary production/QC stages.
+
+Generate the customer-facing delivery note at that point.
+
+The delivery note contains the products the customer bought.
+
+It must NOT expose:
+
+* component SKUs
+* BOM
+* supplier information
+* component costs
+* production instructions.
+
+---
+
+# 19. STOCK MOVEMENT DISCIPLINE
+
+Once the new component system becomes authoritative:
+
+Do not allow arbitrary stock quantity editing without creating a movement.
+
+Every change must have a reason.
+
+Examples:
+
+GOODS_RECEIPT
+
+PRODUCTION_CONSUMPTION
+
+PRODUCTION_DAMAGE
+
+CUSTOMER_RETURN
+
+STOCKTAKE_ADJUSTMENT
+
+MANUAL_ADJUSTMENT
+
+CANCELLATION
+
+etc.
+
+A manual adjustment requires:
+
+quantity
+
+reason
+
+user
+
+timestamp
+
+optional note.
+
+---
+
+# 20. STOCKTAKE
+
+Proceed with component-level stocktaking.
+
+Expected quantity
+
+vs
+
+Counted quantity
+
+=
+
+Variance
+
+Any approved variance creates an auditable stock movement.
+
+---
+
+# 21. COSTING
+
+Use the BOM to calculate estimated cost of the sellable product.
+
+Keep these cost elements separately identifiable:
+
+Blank garment
+
+Decoration
+
+Packaging
+
+Production/labour allowance
+
+Other component costs
+
+This allows us later to analyse:
+
+SELLING PRICE
+
+minus
+
+TRUE PRODUCT COST
+
+=
+
+CONTRIBUTION / MARGIN
+
+Do not assume that component purchase cost alone represents finished product cost.
+
+---
+
+# 22. FUTURE STOCK INTELLIGENCE
+
+Do NOT build automatic purchasing intelligence yet.
+
+But make sure the data model captures enough information so we can later calculate:
+
+* units sold by component
+* average daily/weekly usage
+* supplier lead time
+* days of cover
+* stockout frequency
+* demand by size
+* demand by colour
+* demand by garment
+* demand by decoration
+* production failure/waste rate
+
+Eventually we want Curvy Rails to recommend:
+
+**what to buy, how many, and when.**
+
+That comes later.
+
+---
+
+# 23. ROLLOUT
+
+Proceed incrementally.
+
+## PHASE 1
+
+Component/BOM schema
+
+Stock movement ledger
+
+Opening-balance/reconciliation tools
+
+BOM authoring
+
+## PHASE 2
+
+Component availability
+
+Checkout holds
+
+Confirmed allocations
+
+Shortfall calculation
+
+## PHASE 3
+
+Purchasing integration
+
+Consolidated requirements
+
+Goods in
+
+Automatic reassessment of blocked orders
+
+## PHASE 4
+
+Production jobs
+
+Worksheets
+
+Picking
+
+Production status
+
+Exceptions
+
+QC
+
+## PHASE 5
+
+Despatch
+
+Delivery notes
+
+Operational dashboard
+
+## PHASE 6
+
+Production batching and optimisation
+
+Do not switch existing stock behaviour off until the replacement path has been tested and reconciled.
+
+---
+
+# 24. REQUIRED TEST SCENARIOS
+
+Before considering this complete, demonstrate automated/integration tests for at least:
+
+1. Two different designs competing for the same blank garment.
+2. One design available across multiple garment sizes.
+3. Insufficient blank stock but sufficient transfer stock.
+4. Sufficient blank stock but insufficient transfer stock.
+5. Both components unavailable.
+6. Existing incoming PO partially covering a shortage.
+7. Partial PO receipt.
+8. Remaining PO receipt.
+9. Two customers attempting to buy the final available component simultaneously.
+10. Abandoned checkout releasing its reservation.
+11. Successful payment converting hold to allocation.
+12. Duplicate payment callback not allocating twice.
+13. Customer cancellation correctly releasing components.
+14. Production damage creating a replacement requirement.
+15. BOM changed after an earlier order without changing the historic order.
+16. Stocktake variance creating the correct ledger movement.
+17. Shared component availability updating every product dependent upon it.
+18. Order becoming production-ready automatically after required goods are received.
+
+Do not test this only through happy-path UI flows.
+
+Test the inventory invariants at database/service level.
+
+---
+
+# PROCEED
+
+The architecture is approved with the decisions above.
+
+Implement **Phase 1 first**.
+
+After Phase 1:
+
+1. Run the relevant tests.
+2. Show the schema/migrations created.
+3. Show how an example hoodie + transfer BOM is represented.
+4. Show the stock ledger with example opening balances.
+5. Show the BOM/product authoring UI.
+6. Confirm that existing stock/order behaviour has not been switched over or broken.
+7. Report any issue discovered in the imported legacy architecture.
+
+Then STOP for review before implementing Phase 2.

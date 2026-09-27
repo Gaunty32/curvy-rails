@@ -18,3 +18,4 @@ export * from "./live-chat-sessions";
 export * from "./analytics";
 export * from "./chat";
 export * from "./shop-checkout-intents";
+export * from "./manufacturing";

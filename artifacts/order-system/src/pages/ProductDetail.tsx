@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useParams, useLocation } from "wouter";
+import { Link, useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUpload } from "@workspace/object-storage-web";
 import Layout from "@/components/Layout";
@@ -1615,6 +1615,9 @@ export default function ProductDetail() {
                     </>
                   )}
                 </div>
+                <Link data-testid="link-product-bom" href={`/products/${productId}/bom`} className="inline-flex items-center gap-2 mt-3 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm font-semibold text-primary hover:bg-primary/10">
+                  <Layers className="h-4 w-4" /> Bill of materials / production operations
+                </Link>
               </div>
               {/* Internal GP% badge — only shown when supplier cost is known */}
               {product.unitPrice > 0 && (() => {

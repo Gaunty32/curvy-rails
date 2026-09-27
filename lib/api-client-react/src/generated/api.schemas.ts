@@ -5,6 +5,305 @@
  * Sales Order System API
  * OpenAPI spec version: 0.1.0
  */
+export type ManufacturingComponentType = typeof ManufacturingComponentType[keyof typeof ManufacturingComponentType];
+
+
+export const ManufacturingComponentType = {
+  garment: 'garment',
+  transfer: 'transfer',
+  patch: 'patch',
+  packaging: 'packaging',
+  other: 'other',
+} as const;
+
+export interface ManufacturingComponent {
+  id: number;
+  sku: string;
+  name: string;
+  type: ManufacturingComponentType;
+  /** @nullable */
+  supplierId: number | null;
+  /** @nullable */
+  supplierSku: string | null;
+  costGbp: number;
+  /** @nullable */
+  bin: string | null;
+  reorderLevel: number;
+  targetLevel: number;
+  /** @nullable */
+  leadDays: number | null;
+  active: boolean;
+  physicalBalance: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ManufacturingComponentInputType = typeof ManufacturingComponentInputType[keyof typeof ManufacturingComponentInputType];
+
+
+export const ManufacturingComponentInputType = {
+  garment: 'garment',
+  transfer: 'transfer',
+  patch: 'patch',
+  packaging: 'packaging',
+  other: 'other',
+} as const;
+
+export interface ManufacturingComponentInput {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  sku: string;
+  /**
+     * @minLength 1
+     * @maxLength 250
+     */
+  name: string;
+  type: ManufacturingComponentInputType;
+  /** @nullable */
+  supplierId?: number | null;
+  /** @nullable */
+  supplierSku?: string | null;
+  /** @minimum 0 */
+  costGbp?: number;
+  /** @nullable */
+  bin?: string | null;
+  /** @minimum 0 */
+  reorderLevel?: number;
+  /** @minimum 0 */
+  targetLevel?: number;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  leadDays?: number | null;
+  active?: boolean;
+}
+
+export type ManufacturingComponentUpdateType = typeof ManufacturingComponentUpdateType[keyof typeof ManufacturingComponentUpdateType];
+
+
+export const ManufacturingComponentUpdateType = {
+  garment: 'garment',
+  transfer: 'transfer',
+  patch: 'patch',
+  packaging: 'packaging',
+  other: 'other',
+} as const;
+
+export interface ManufacturingComponentUpdate {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  sku?: string;
+  /**
+     * @minLength 1
+     * @maxLength 250
+     */
+  name?: string;
+  type?: ManufacturingComponentUpdateType;
+  /** @nullable */
+  supplierId?: number | null;
+  /** @nullable */
+  supplierSku?: string | null;
+  /** @minimum 0 */
+  costGbp?: number;
+  /** @nullable */
+  bin?: string | null;
+  /** @minimum 0 */
+  reorderLevel?: number;
+  /** @minimum 0 */
+  targetLevel?: number;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  leadDays?: number | null;
+  active?: boolean;
+}
+
+export type ManufacturingVariantClassificationInputClassification = typeof ManufacturingVariantClassificationInputClassification[keyof typeof ManufacturingVariantClassificationInputClassification];
+
+
+export const ManufacturingVariantClassificationInputClassification = {
+  LEGACY_REVIEW: 'LEGACY_REVIEW',
+  FINISHED_STOCK: 'FINISHED_STOCK',
+  COMPONENT_STOCK: 'COMPONENT_STOCK',
+} as const;
+
+/**
+ * Classification is a label/review state only; it does not transfer or change stock.
+ */
+export interface ManufacturingVariantClassificationInput {
+  classification: ManufacturingVariantClassificationInputClassification;
+}
+
+export type ManufacturingVariantClassificationResultClassification = typeof ManufacturingVariantClassificationResultClassification[keyof typeof ManufacturingVariantClassificationResultClassification];
+
+
+export const ManufacturingVariantClassificationResultClassification = {
+  LEGACY_REVIEW: 'LEGACY_REVIEW',
+  FINISHED_STOCK: 'FINISHED_STOCK',
+  COMPONENT_STOCK: 'COMPONENT_STOCK',
+} as const;
+
+/**
+ * Classification label plus the unchanged legacy stock quantity.
+ */
+export interface ManufacturingVariantClassificationResult {
+  variantId: number;
+  classification: ManufacturingVariantClassificationResultClassification;
+  /** Returned unchanged; classification does not transfer stock */
+  stockQuantity: number;
+}
+
+export interface ManufacturingOpeningBalanceInput {
+  /** @minimum 0 */
+  countedQuantity: number;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  note?: string | null;
+}
+
+export interface ManufacturingStocktakeInput {
+  /** @minimum 0 */
+  countedQuantity: number;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  note?: string | null;
+}
+
+export type ManufacturingStockMovementReason = typeof ManufacturingStockMovementReason[keyof typeof ManufacturingStockMovementReason];
+
+
+export const ManufacturingStockMovementReason = {
+  OPENING_BALANCE: 'OPENING_BALANCE',
+  STOCKTAKE_ADJUSTMENT: 'STOCKTAKE_ADJUSTMENT',
+} as const;
+
+export interface ManufacturingStockMovement {
+  id: number;
+  componentId: number;
+  /** Signed change; opening balance may be zero */
+  quantityChange: number;
+  reason: ManufacturingStockMovementReason;
+  actor: string;
+  occurredAt: string;
+  /** @nullable */
+  reference: string | null;
+  /** @nullable */
+  note: string | null;
+  resultingBalance: number;
+}
+
+export type ManufacturingStocktakeStatus = typeof ManufacturingStocktakeStatus[keyof typeof ManufacturingStocktakeStatus];
+
+
+export const ManufacturingStocktakeStatus = {
+  draft: 'draft',
+  approved: 'approved',
+} as const;
+
+export interface ManufacturingStocktake {
+  id: number;
+  componentId: number;
+  expectedQuantity: number;
+  countedQuantity: number;
+  /** Last immutable stock movement ID observed when the draft was created; -1 denotes unknown legacy state */
+  movementRevision: number;
+  status: ManufacturingStocktakeStatus;
+  createdBy: string;
+  /** @nullable */
+  approvedBy: string | null;
+  createdAt: string;
+  /** @nullable */
+  approvedAt: string | null;
+  /** @nullable */
+  note: string | null;
+}
+
+export interface ManufacturingStocktakeApproval {
+  stocktake: ManufacturingStocktake;
+  movement: ManufacturingStockMovement | null;
+}
+
+export interface ManufacturingBomComponentInput {
+  /** @minimum 1 */
+  componentId: number;
+  /** @minimum 1 */
+  quantity: number;
+}
+
+export interface ManufacturingBomOperationInput {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  method: string;
+  /**
+     * @maxLength 250
+     * @nullable
+     */
+  designRef?: string | null;
+  /**
+     * @maxLength 250
+     * @nullable
+     */
+  position?: string | null;
+  /**
+     * @maxLength 4000
+     * @nullable
+     */
+  instructions?: string | null;
+  /** @minimum 0 */
+  labourAllowance?: number;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  thumbnail?: string | null;
+  sortOrder?: number;
+}
+
+export interface ManufacturingBomInput {
+  /** @minItems 1 */
+  components: ManufacturingBomComponentInput[];
+  operations?: ManufacturingBomOperationInput[];
+}
+
+export type ManufacturingBomComponent = ManufacturingBomComponentInput & {
+  id: number;
+  bomId: number;
+  /** Component SKU frozen when this BOM version was created */
+  componentSkuSnapshot: string;
+  /** Component name frozen when this BOM version was created */
+  componentNameSnapshot: string;
+  /** GBP unit cost frozen when this BOM version was created */
+  unitCostGbpSnapshot: number;
+};
+
+export type ManufacturingBomOperation = ManufacturingBomOperationInput & {
+  id: number;
+  bomId: number;
+};
+
+export interface ManufacturingBom {
+  id: number;
+  variantId: number;
+  version: number;
+  isCurrent: boolean;
+  createdBy: string;
+  createdAt: string;
+  components: ManufacturingBomComponent[];
+  operations: ManufacturingBomOperation[];
+}
+
 export interface CallbackInput {
   phone: string;
   page_url?: string;

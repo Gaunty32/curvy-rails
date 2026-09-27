@@ -1,4 +1,5 @@
-import { pgTable, text, serial, timestamp, integer, numeric, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, numeric, boolean, jsonb, check } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { productsTable } from "./products";
 import { suppliersTable } from "./suppliers";
 
@@ -16,6 +17,8 @@ export const productVariantsTable = pgTable("product_variants", {
   vatRate: numeric("vat_rate", { precision: 5, scale: 4 }),
   imageUrl: text("image_url"),
   stockQuantity: integer("stock_quantity").default(0).notNull(),
+  /** Additive rollout marker; legacy stock is never reinterpreted as component stock. */
+  inventoryClassification: text("inventory_classification").notNull().default("LEGACY_REVIEW"),
   minStockQty: integer("min_stock_qty").default(5).notNull(),
   binLocation: text("bin_location"),
   primarySupplierId: integer("primary_supplier_id").references(() => suppliersTable.id, { onDelete: "set null" }),
@@ -27,4 +30,6 @@ export const productVariantsTable = pgTable("product_variants", {
   isAvailable: boolean("is_available").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
-});
+}, (table) => [
+  check("product_variants_inventory_classification_check", sql`${table.inventoryClassification} IN ('LEGACY_REVIEW', 'FINISHED_STOCK', 'COMPONENT_STOCK')`),
+]);
