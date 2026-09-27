@@ -1,0 +1,1184 @@
+# CURVY RAILS — STOCK, PURCHASING & PRODUCTION SYSTEM
+
+We now need to define the operational system behind the Curvy Rails website.
+
+This is NOT conventional ecommerce stock management.
+
+Many Curvy Rails website products will be **made to order from stocked components**.
+
+For example:
+
+Customer buys:
+
+**Curvy Rails "Good Vibes" Hoodie — Black — Size 22**
+
+The finished decorated hoodie may NOT exist in stock.
+
+Instead we stock:
+
+1. The blank black hoodie in size 22.
+2. The "Good Vibes" print/transfer.
+
+Once ordered, production combines these two components to create the finished product.
+
+The system therefore needs to manage:
+
+# COMPONENT STOCK → CUSTOMER ORDER → PRODUCTION → DESPATCH
+
+The objective is an extremely efficient production operation capable of maintaining appropriate blank/component stock and quickly processing website orders.
+
+---
+
+# 1. THREE DIFFERENT CONCEPTS
+
+The system must distinguish between:
+
+## SELLABLE PRODUCTS
+
+What the customer sees and buys.
+
+Example:
+
+Good Vibes Hoodie
+Black
+Size 22
+
+SKU:
+
+CR-GV-HOOD-BLK-22
+
+---
+
+## COMPONENTS
+
+The physical things we actually stock.
+
+Example:
+
+**Blank garment**
+
+Black Hoodie
+Size 22
+
+Component SKU:
+
+BL-HOOD-BLK-22
+
+and:
+
+**Decoration**
+
+Good Vibes Front Print
+
+Component SKU:
+
+PR-GOODVIBES-FRONT
+
+---
+
+## PRODUCTION OPERATIONS
+
+What must happen to turn those components into the customer's product.
+
+Example:
+
+Take:
+
+1 × BL-HOOD-BLK-22
+
+plus:
+
+1 × PR-GOODVIBES-FRONT
+
+Perform:
+
+HEAT PRESS — FRONT CENTRE
+
+Result:
+
+1 × CR-GV-HOOD-BLK-22
+
+This relationship is fundamental to the architecture.
+
+---
+
+# 2. BILL OF MATERIALS
+
+Every made-to-order website product/variant should support a:
+
+# BILL OF MATERIALS — BOM
+
+Example:
+
+## GOOD VIBES HOODIE — BLACK — SIZE 22
+
+Requires:
+
+| Component              | Qty |
+| ---------------------- | --: |
+| Black Hoodie Size 22   |   1 |
+| Good Vibes Front Print |   1 |
+
+Production:
+
+**Heat Press**
+
+Position:
+
+**Front Centre**
+
+This means the website can sell the finished product based on the availability of the COMPONENTS required to produce it.
+
+---
+
+# 3. DIFFERENT DECORATION TYPES
+
+Do not build the system specifically for DTF printing.
+
+Support configurable production methods.
+
+Initial methods:
+
+* DTF / heat applied print
+* Embroidery
+* potentially other decoration methods later
+
+Example embroidery product:
+
+Curvy Rails Embroidered Hoodie
+
+requires:
+
+1 × Blank Hoodie — Navy — Size 24
+
+Production operation:
+
+EMBROIDERY
+
+Design:
+
+Curvy Rails Chest Logo
+
+Position:
+
+LEFT CHEST
+
+The architecture must allow multiple operations/components where required.
+
+Example:
+
+Front print
+
+*
+
+Back print
+
+*
+
+Blank garment.
+
+---
+
+# 4. COMPONENT INVENTORY
+
+Create a proper component inventory.
+
+Component types should include at least:
+
+GARMENT
+
+PRINT / TRANSFER
+
+EMBROIDERY DESIGN / REQUIREMENT
+
+PACKAGING
+
+OTHER
+
+Physical components should track:
+
+* Component SKU
+* Description
+* Type
+* Supplier
+* Supplier SKU
+* Cost
+* Physical stock
+* Allocated stock
+* Available stock
+* Incoming stock
+* Reorder level
+* Target stock
+* Lead time
+* Storage location
+* Active/inactive
+
+---
+
+# 5. BLANK GARMENT STOCK
+
+Blank garments need particularly good visibility.
+
+Admin should be able to see something like:
+
+## CORE HOODIE — BLACK
+
+| Size | Physical | Allocated | Available | Incoming | Target |
+| ---- | -------: | --------: | --------: | -------: | -----: |
+| 16   |       14 |         3 |        11 |        0 |     10 |
+| 18   |       19 |         5 |        14 |        0 |     12 |
+| 20   |       12 |         4 |         8 |       12 |     12 |
+| 22   |        7 |         5 |         2 |       12 |     12 |
+| 24   |        4 |         3 |         1 |       12 |     10 |
+| 26   |        8 |         2 |         6 |        0 |      8 |
+
+This allows production/purchasing to immediately see where shortages are developing.
+
+---
+
+# 6. PRINT STOCK
+
+Prints/transfers are also physical stock.
+
+Example:
+
+GOOD VIBES FRONT PRINT
+
+Physical: 28
+Allocated: 11
+Available: 17
+Target: 30
+
+If another 10 Good Vibes products are ordered:
+
+Available becomes 7.
+
+Purchasing should identify the requirement to replenish the print stock based upon the configured target/reorder rules.
+
+---
+
+# 7. SELLABLE AVAILABILITY
+
+This requires careful logic.
+
+Website availability for a made-to-order product should be calculated from the components necessary to make it.
+
+Example:
+
+Good Vibes Black Hoodie Size 22 requires:
+
+Black Hoodie Size 22 — 6 available
+
+Good Vibes Print — 23 available
+
+Therefore immediate producible availability is:
+
+# 6
+
+The blank garment is the limiting component.
+
+However, business rules may allow products to remain orderable when components can be quickly replenished.
+
+Therefore support configurable states such as:
+
+IN STOCK / READY TO PRODUCE
+
+LOW STOCK
+
+AVAILABLE TO ORDER
+
+OUT OF STOCK
+
+Do not expose raw component quantities to customers unless configured.
+
+---
+
+# 8. ORDER CONFIRMATION
+
+Once payment/order is confirmed:
+
+Customer order
+
+↓
+
+Determine BOM for every order line
+
+↓
+
+Calculate component requirements
+
+↓
+
+Allocate available components
+
+↓
+
+Identify shortages
+
+↓
+
+Create purchasing requirements
+
+↓
+
+Create production job
+
+↓
+
+Create production worksheet.
+
+This should happen automatically.
+
+---
+
+# 9. ALLOCATION
+
+Example order:
+
+2 × Good Vibes Hoodie Black Size 22
+
+Requires:
+
+2 × BL-HOOD-BLK-22
+
+2 × PR-GOODVIBES-FRONT
+
+If both are available:
+
+Allocate them to the order.
+
+They must no longer be considered available to another confirmed order.
+
+Do not wait until production physically consumes them before allocating them.
+
+---
+
+# 10. SHORTFALLS
+
+If an order requires:
+
+2 × Black Hoodie Size 22
+
+but only:
+
+1 available
+
+the system should create:
+
+# PURCHASING SHORTFALL
+
+Required: 2
+Available: 1
+Shortfall: 1
+
+Likewise for prints.
+
+The production job should show:
+
+⚠ WAITING FOR COMPONENT
+
+rather than silently appearing ready for production.
+
+---
+
+# 11. PURCHASING
+
+Create:
+
+# PURCHASING
+
+within Admin.
+
+The purchasing system should consolidate requirements.
+
+Do NOT simply create one purchase requirement per customer order.
+
+Example:
+
+Order 10031 needs:
+
+2 × Black Hoodie 22
+
+Order 10035 needs:
+
+1 × Black Hoodie 22
+
+Order 10042 needs:
+
+3 × Black Hoodie 22
+
+Stock shortfall:
+
+4
+
+Purchasing should show a consolidated requirement.
+
+Where appropriate it should also consider:
+
+TARGET STOCK.
+
+Example:
+
+Required to fulfil confirmed orders: 4
+
+Target stock after fulfilment: 10
+
+Suggested purchase quantity:
+
+# 14
+
+Admin can approve/amend this before ordering.
+
+---
+
+# 12. PURCHASE ORDERS
+
+Support Purchase Orders.
+
+PO should contain:
+
+Supplier
+
+Supplier reference
+
+Component SKU
+
+Supplier SKU
+
+Description
+
+Quantity
+
+Cost
+
+Expected date
+
+Status
+
+Statuses:
+
+DRAFT
+
+APPROVED
+
+ORDERED
+
+PART RECEIVED
+
+RECEIVED
+
+CANCELLED
+
+Initially do NOT automatically send orders to suppliers.
+
+Allow purchasing staff to create/export/process them.
+
+---
+
+# 13. GOODS IN
+
+Create a very fast:
+
+# GOODS IN
+
+workflow.
+
+When stock arrives:
+
+Find/scan PO
+
+↓
+
+Confirm quantities received
+
+↓
+
+Stock increases
+
+↓
+
+Existing order shortages are reassessed
+
+↓
+
+Previously blocked production jobs can become:
+
+# READY FOR PRODUCTION
+
+Part deliveries must be supported.
+
+---
+
+# 14. PRODUCTION QUEUE
+
+Create:
+
+# PRODUCTION
+
+This should be operational rather than administrative.
+
+Suggested statuses:
+
+WAITING FOR COMPONENTS
+
+READY
+
+IN PRODUCTION
+
+QUALITY CHECK
+
+READY FOR DESPATCH
+
+COMPLETE
+
+Production staff should immediately see what can actually be produced.
+
+Default sorting should prioritise:
+
+1. Due date
+2. Orders where all components are available
+3. Appropriate production batching opportunities.
+
+---
+
+# 15. PRODUCTION WORKSHEET
+
+Every production job needs a simple, extremely clear worksheet.
+
+Example:
+
+# ORDER CR-10482
+
+**Customer:** Sarah Jones
+
+**Product:** Good Vibes Hoodie
+
+**Garment:**
+
+Black Core Hoodie
+Size 22
+Qty 1
+
+**Decoration:**
+
+GOOD VIBES
+
+Method:
+
+DTF / HEAT PRESS
+
+Position:
+
+FRONT CENTRE
+
+Include:
+
+* product image
+* print/design thumbnail
+* garment colour
+* garment size
+* quantity
+* decoration position
+* production notes
+* order number
+* barcode/QR for job where useful
+
+The production operator should NOT need to interpret the customer's ecommerce order.
+
+The worksheet tells them exactly what to make.
+
+---
+
+# 16. PRODUCTION BATCHING
+
+This is important for efficiency.
+
+The system should be capable of grouping compatible work.
+
+Example:
+
+Six orders all require:
+
+GOOD VIBES FRONT PRINT
+
+The production screen could suggest:
+
+# BATCH — GOOD VIBES
+
+8 garments
+
+Black Hoodie 20 × 2
+Black Hoodie 22 × 3
+Black Hoodie 24 × 2
+Black T-shirt 22 × 1
+
+Likewise embroidery jobs can potentially be grouped by:
+
+Design
+
+Thread colours
+
+Position
+
+Garment type
+
+Machine suitability.
+
+Do not automatically combine jobs in a way that loses customer/order traceability.
+
+Every garment must remain traceable to its order.
+
+---
+
+# 17. PICKING
+
+Before production, create a:
+
+# PICK FOR PRODUCTION
+
+workflow.
+
+Staff should be able to pick:
+
+* blank garments
+* transfers/prints
+* other physical components
+
+against the production job/batch.
+
+Ideally support barcode/QR scanning later.
+
+Statuses:
+
+NOT PICKED
+
+PART PICKED
+
+PICKED
+
+Production should be able to see whether the physical components have actually been picked.
+
+---
+
+# 18. CONSUMPTION
+
+When production is confirmed complete:
+
+Allocated components become:
+
+# CONSUMED
+
+This should create permanent inventory ledger movements.
+
+Example:
+
+-1 BL-HOOD-BLK-22
+
+-1 PR-GOODVIBES-FRONT
+
+Reason:
+
+PRODUCTION CONSUMPTION
+
+Reference:
+
+CR-10482
+
+Do not double deduct components at both allocation and consumption.
+
+Allocation reduces AVAILABLE stock.
+
+Consumption reduces PHYSICAL stock and releases the allocation.
+
+---
+
+# 19. PRODUCTION EXCEPTIONS
+
+Production needs a simple way to record problems.
+
+Examples:
+
+Garment damaged during pressing
+
+Print failed
+
+Wrong size picked
+
+Embroidery failure
+
+Component missing
+
+If a blank is damaged:
+
+Record:
+
+PRODUCTION DAMAGE
+
+↓
+
+Physical garment stock -1
+
+↓
+
+Original requirement still exists
+
+↓
+
+Allocate replacement if available
+
+OR
+
+↓
+
+Create new purchasing shortfall.
+
+Maintain the audit trail.
+
+---
+
+# 20. QUALITY CHECK
+
+After production:
+
+# QUALITY CHECK
+
+Simple operator actions:
+
+PASS
+
+or
+
+PROBLEM
+
+If PASS:
+
+READY FOR DESPATCH.
+
+If PROBLEM:
+
+Record issue and return appropriately to production.
+
+---
+
+# 21. DELIVERY NOTE
+
+Once all items on an order have passed production/QC:
+
+Automatically make the order:
+
+# READY FOR DESPATCH
+
+Generate a delivery note.
+
+Delivery note should include:
+
+Curvy Rails branding
+
+Order number
+
+Customer name
+
+Delivery address
+
+Products
+
+Sizes
+
+Quantities
+
+Any appropriate customer-facing information.
+
+Do NOT show internal:
+
+component SKUs
+
+supplier information
+
+cost prices
+
+production instructions.
+
+---
+
+# 22. DESPATCH
+
+Create:
+
+# DESPATCH
+
+workflow.
+
+Eventually this may integrate with a carrier/shipping platform.
+
+For now architecture should support:
+
+READY FOR DESPATCH
+
+↓
+
+DELIVERY NOTE
+
+↓
+
+SHIPPING LABEL
+
+↓
+
+DESPATCH CONFIRMED
+
+↓
+
+Tracking number
+
+↓
+
+Customer notification
+
+↓
+
+COMPLETE
+
+Do not invent a courier integration yet.
+
+---
+
+# 23. STOCK REPLENISHMENT
+
+There are TWO reasons to purchase components:
+
+## ORDER SHORTFALL
+
+We physically cannot fulfil confirmed customer orders.
+
+This is urgent.
+
+and:
+
+## STOCK REPLENISHMENT
+
+Stock has fallen below the desired operating level.
+
+This protects our fast-despatch capability.
+
+Keep these clearly distinguishable.
+
+Purchasing dashboard should show:
+
+# URGENT — CUSTOMER ORDERS BLOCKED
+
+separately from:
+
+# REPLENISHMENT RECOMMENDATIONS
+
+---
+
+# 24. TARGET STOCK
+
+Allow target stock to be configured per component/variant.
+
+Eventually we should be able to improve target levels based on actual sales velocity.
+
+For example:
+
+Black Hoodie Size 22 sells quickly.
+
+Target: 20
+
+Pink Hoodie Size 16 sells slowly.
+
+Target: 4
+
+Do not automatically change targets initially.
+
+Provide data that allows us to make those decisions.
+
+---
+
+# 25. COMPONENT SHARING
+
+A major benefit of this architecture is that one blank can support MANY website products.
+
+Example:
+
+BL-HOOD-BLK-22
+
+could potentially produce:
+
+Good Vibes Hoodie
+
+Curvy Rails Logo Hoodie
+
+Friday Night Hoodie
+
+Love Yourself Hoodie
+
+etc.
+
+Therefore DO NOT duplicate blank garment inventory for each finished design.
+
+All relevant sellable products should reference the SAME underlying blank component.
+
+Likewise one print/design may potentially be used on multiple garments.
+
+This is essential.
+
+---
+
+# 26. PRODUCT CREATION
+
+Admin should be able to create a new website product by selecting:
+
+GARMENT
+
+*
+
+DECORATION(S)
+
+*
+
+PRODUCTION METHOD
+
+*
+
+POSITION(S)
+
+*
+
+SELLING PRICE
+
+rather than manually creating an entirely independent stock item.
+
+Example:
+
+Choose:
+
+Core Hoodie
+
+Colour:
+
+Black
+
+Sizes:
+
+16–32
+
+Decoration:
+
+GOOD VIBES
+
+Method:
+
+DTF
+
+Position:
+
+Front Centre
+
+The system then creates/maps the appropriate sellable variants and BOMs.
+
+---
+
+# 27. COSTING
+
+Because the system knows the components, it should calculate estimated product cost.
+
+Example:
+
+Blank hoodie: £8.40
+
+Transfer: £1.20
+
+Production allowance: £1.50
+
+Packaging: £0.35
+
+Estimated cost:
+
+£11.45
+
+Retail:
+
+£29.95
+
+Estimated gross margin:
+
+£18.50
+
+Make labour/production allowances configurable.
+
+This will eventually allow meaningful product profitability reporting.
+
+---
+
+# 28. DASHBOARD
+
+Create an operations dashboard showing at a glance:
+
+## TODAY
+
+Orders received
+
+Units ordered
+
+Ready to produce
+
+Waiting for stock
+
+In production
+
+Ready for despatch
+
+Despatched
+
+## PURCHASING
+
+Orders blocked by shortages
+
+Garments required
+
+Prints required
+
+Open POs
+
+Overdue POs
+
+## STOCK
+
+Blank garment value
+
+Print stock value
+
+Low stock components
+
+Out-of-stock components
+
+## PRODUCTION
+
+Jobs ready
+
+Jobs blocked
+
+Jobs in progress
+
+Jobs requiring QC
+
+Orders approaching SLA
+
+The dashboard should be designed for action, not simply reporting.
+
+---
+
+# 29. KEY WORKFLOW
+
+The intended workflow is:
+
+```
+              WEBSITE ORDER
+                   │
+              PAYMENT CONFIRMED
+                   │
+                   ▼
+             EXPLODE THE BOM
+                   │
+          ┌────────┴────────┐
+          │                 │
+      GARMENT            PRINT /
+      REQUIRED          DECORATION
+          │                 │
+          └────────┬────────┘
+                   │
+             CHECK STOCK
+                   │
+         ┌─────────┴─────────┐
+         │                   │
+    ALL AVAILABLE         SHORTFALL
+         │                   │
+      ALLOCATE           PURCHASING
+         │                   │
+         │              GOODS RECEIVED
+         │                   │
+         └─────────┬─────────┘
+                   │
+                   ▼
+           READY TO PRODUCE
+                   │
+                   ▼
+            PICK COMPONENTS
+                   │
+                   ▼
+              PRODUCTION
+                   │
+                   ▼
+             QUALITY CHECK
+                   │
+                   ▼
+          READY FOR DESPATCH
+                   │
+                   ▼
+            DELIVERY NOTE
+                   │
+                   ▼
+               DESPATCH
+```
+
+This is the operational backbone of Curvy Rails.
+
+---
+
+# 30. THE OBJECTIVE
+
+The objective is NOT simply accurate stock.
+
+The objective is:
+
+# UBER-EFFICIENT MADE-TO-ORDER PRODUCTION.
+
+We want to hold sensible quantities of:
+
+BLANK GARMENTS
+
+*
+
+PRINTS / COMPONENTS
+
+rather than unnecessarily holding every finished design/size combination.
+
+That allows Curvy Rails to offer a broad range of designs while keeping finished stock exposure low.
+
+The system should make it obvious:
+
+**What have we sold?**
+
+**What do we need to make?**
+
+**Do we have everything needed to make it?**
+
+**What needs buying?**
+
+**What can production work on right now?**
+
+**What is waiting and why?**
+
+**What is ready to leave today?**
+
+Those questions should be answerable in seconds.
+
+---
+
+# 31. BEFORE IMPLEMENTATION
+
+Before making major changes:
+
+1. Inspect the existing project.
+2. Review the existing Product, Variant, Order and Inventory models.
+3. Identify what can safely be reused.
+4. Propose the BOM/component architecture.
+5. Propose inventory allocation and ledger logic.
+6. Explain how component shortfalls will be calculated.
+7. Explain how purchasing requirements will be consolidated.
+8. Show the proposed production workflow.
+9. Show the proposed admin screens.
+10. Identify any migration risks.
+11. Explain how this fits with the existing Curvy Rails website/community specification.
+
+Do not start major implementation until this architecture has been reported and reviewed.
