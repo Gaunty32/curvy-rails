@@ -56,6 +56,7 @@ paths:
       operationId: updateManufacturingComponent
       tags: [manufacturing]
       summary: Update component metadata without changing stock
+      security: [{ bearerAuth: [] }]
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
       requestBody:
@@ -213,6 +214,123 @@ paths:
         "400": { description: Invalid BOM or inactive/missing component }
         "404": { description: Variant not found }
         "409": { description: Concurrent version conflict }
+  /shop/variants/{variantId}/availability:
+    get:
+      operationId: getShopVariantAvailability
+      tags: [shop]
+      summary: Read published variant component availability
+      parameters:
+        - { name: variantId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200":
+          description: Customer-safe availability state without component-derived quantities
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CustomerVariantAvailability" }
+        "404": { description: "Variant is unpublished, unsellable, or not explicitly enabled for component availability" }
+  /manufacturing/variants/{variantId}/availability:
+    get:
+      operationId: getManufacturingVariantAvailability
+      tags: [manufacturing]
+      summary: Read authoritative staff availability for a variant
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: variantId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200":
+          description: Component balances and immediate producibility
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ManufacturingAvailability" }
+        "401": { description: Staff authentication required }
+        "404": { description: Variant not found }
+  /manufacturing/variants/{variantId}/availability-policy:
+    patch:
+      operationId: updateManufacturingVariantAvailabilityPolicy
+      tags: [manufacturing]
+      summary: Configure explicit manufacturing eligibility and bounded replenishment
+      description: Enabling requires an active current BOM and a recorded opening balance for every physical BOM component. Replenishment is disabled by default and requires component-level replenishable confirmation and lead days.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: variantId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ManufacturingVariantAvailabilityPolicyInput" }
+      responses:
+        "200":
+          description: Updated explicit variant policy
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ManufacturingVariantPolicy" }
+        "400": { description: Invalid policy }
+        "401": { description: Staff authentication required }
+        "404": { description: Variant not found }
+        "409": { description: BOM or opened component stock requirement not satisfied }
+  /manufacturing/policy:
+    get:
+      operationId: getManufacturingAvailabilityPolicy
+      tags: [manufacturing]
+      summary: Read shared low-stock threshold and checkout hold duration
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Current availability defaults
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ManufacturingAvailabilityPolicy" }
+        "401": { description: Staff authentication required }
+    patch:
+      operationId: updateManufacturingAvailabilityPolicy
+      tags: [manufacturing]
+      summary: Configure shared low-stock threshold and checkout hold duration
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ManufacturingAvailabilityPolicyInput" }
+      responses:
+        "200":
+          description: Updated policy
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ManufacturingAvailabilityPolicy" }
+        "400": { description: Invalid policy }
+        "401": { description: Staff authentication required }
+  /manufacturing/components/{id}/balances:
+    get:
+      operationId: getManufacturingComponentBalances
+      tags: [manufacturing]
+      summary: Inspect physical, held, allocated, and available component quantities
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200":
+          description: Current component consumption breakdown
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ManufacturingComponentBalances" }
+        "401": { description: Staff authentication required }
+        "404": { description: Component not found }
+  /manufacturing/orders/{id}/readiness:
+    get:
+      operationId: getManufacturingOrderReadiness
+      tags: [manufacturing]
+      summary: Report component allocation readiness and shortfalls for an order
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200":
+          description: Component readiness by order item
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ManufacturingOrderReadiness" }
+        "401": { description: Staff authentication required }
+        "404": { description: Order not found }
 
   /healthz:
     get:
@@ -1087,7 +1205,7 @@ components:
   schemas:
     ManufacturingComponent:
       type: object
-      required: [id, sku, name, type, supplierId, supplierSku, costGbp, bin, reorderLevel, targetLevel, leadDays, active, physicalBalance, createdAt, updatedAt]
+      required: [id, sku, name, type, supplierId, supplierSku, costGbp, bin, reorderLevel, targetLevel, leadDays, active, replenishable, physicalBalance, createdAt, updatedAt]
       properties:
         id: { type: integer }
         sku: { type: string }
@@ -1101,6 +1219,7 @@ components:
         targetLevel: { type: integer }
         leadDays: { type: ["integer", "null"] }
         active: { type: boolean }
+        replenishable: { type: boolean }
         physicalBalance: { type: integer }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
@@ -1119,6 +1238,7 @@ components:
         targetLevel: { type: integer, minimum: 0, default: 0 }
         leadDays: { type: ["integer", "null"], minimum: 0 }
         active: { type: boolean, default: true }
+        replenishable: { type: boolean, default: false }
     ManufacturingComponentUpdate:
       type: object
       minProperties: 1
@@ -1134,6 +1254,146 @@ components:
         targetLevel: { type: integer, minimum: 0 }
         leadDays: { type: ["integer", "null"], minimum: 0 }
         active: { type: boolean }
+        replenishable: { type: boolean }
+    ManufacturingAvailabilityComponent:
+      type: object
+      required: [componentId, sku, name, quantityPerUnit, physical, held, allocated, available, producibleQuantity]
+      properties:
+        componentId: { type: integer }
+        sku: { type: string }
+        name: { type: string }
+        quantityPerUnit: { type: integer }
+        physical: { type: integer }
+        held: { type: integer }
+        allocated: { type: integer }
+        available: { type: integer }
+        producibleQuantity: { type: integer }
+    ManufacturingAvailability:
+      type: object
+      required: [variantId, manufacturingEnabled, bomId, producibleQuantity, status, components]
+      properties:
+        variantId: { type: integer }
+        manufacturingEnabled: { type: boolean }
+        bomId: { type: ["integer", "null"] }
+        producibleQuantity: { type: ["integer", "null"] }
+        status: { type: string, enum: [IN_STOCK, LOW_STOCK, AVAILABLE_TO_ORDER, OUT_OF_STOCK, LEGACY] }
+        components:
+          type: array
+          items: { $ref: "#/components/schemas/ManufacturingAvailabilityComponent" }
+    CustomerVariantAvailability:
+      type: object
+      required: [variantId, manufacturingEnabled, status]
+      properties:
+        variantId: { type: integer }
+        manufacturingEnabled: { type: boolean, enum: [true] }
+        status: { type: string, enum: [IN_STOCK, LOW_STOCK, AVAILABLE_TO_ORDER, OUT_OF_STOCK] }
+    ManufacturingVariantAvailabilityPolicyInput:
+      type: object
+      additionalProperties: false
+      required: [allowOrderToReplenish, maxOutstandingReplenishmentUnits, promisedReplenishmentDays]
+      properties:
+        manufacturingEnabled: { type: boolean }
+        allowOrderToReplenish: { type: boolean }
+        maxOutstandingReplenishmentUnits: { type: integer, minimum: 0 }
+        promisedReplenishmentDays: { type: integer, minimum: 0 }
+    ManufacturingVariantPolicy:
+      type: object
+      required: [id, manufacturingEnabled, allowOrderToReplenish, maxOutstandingReplenishmentUnits, promisedReplenishmentDays]
+      properties:
+        id: { type: integer }
+        manufacturingEnabled: { type: boolean }
+        allowOrderToReplenish: { type: boolean }
+        maxOutstandingReplenishmentUnits: { type: integer }
+        promisedReplenishmentDays: { type: integer }
+    ManufacturingAvailabilityPolicyInput:
+      type: object
+      additionalProperties: false
+      required: [lowStockThreshold, holdDurationMinutes]
+      properties:
+        lowStockThreshold: { type: integer, minimum: 0 }
+        holdDurationMinutes: { type: integer, minimum: 1, maximum: 1440 }
+    ManufacturingAvailabilityPolicy:
+      type: object
+      required: [id, lowStockThreshold, holdDurationMinutes]
+      properties:
+        id: { type: integer }
+        lowStockThreshold: { type: integer }
+        holdDurationMinutes: { type: integer }
+    ManufacturingHoldSummary:
+      type: object
+      required: [id, paymentIntentId, lineIndex, variantId, bomId, componentId, requiredQuantity, heldQuantity, shortfallQuantity, status, expiresAt]
+      properties:
+        id: { type: integer }
+        paymentIntentId: { type: string }
+        lineIndex: { type: integer }
+        variantId: { type: integer }
+        bomId: { type: integer }
+        componentId: { type: integer }
+        requiredQuantity: { type: integer }
+        heldQuantity: { type: integer }
+        shortfallQuantity: { type: integer }
+        status: { type: string, enum: [ACTIVE, CONVERTED, RELEASED, EXPIRED] }
+        expiresAt: { type: string, format: date-time }
+    ManufacturingAllocationSummary:
+      type: object
+      required: [id, orderId, orderItemId, variantId, bomId, componentId, requiredQuantity, allocatedQuantity, shortfallQuantity, status, manualReviewRequired, manualReviewReason]
+      properties:
+        id: { type: integer }
+        orderId: { type: integer }
+        orderItemId: { type: integer }
+        variantId: { type: integer }
+        bomId: { type: integer }
+        componentId: { type: integer }
+        requiredQuantity: { type: integer }
+        allocatedQuantity: { type: integer }
+        shortfallQuantity: { type: integer }
+        status: { type: string, enum: [CONFIRMED, RELEASED] }
+        manualReviewRequired: { type: boolean }
+        manualReviewReason: { type: ["string", "null"] }
+    ManufacturingComponentBalances:
+      type: object
+      required: [componentId, sku, name, physical, held, allocated, available, holds, allocations]
+      properties:
+        componentId: { type: integer }
+        sku: { type: string }
+        name: { type: string }
+        physical: { type: integer }
+        held: { type: integer }
+        allocated: { type: integer }
+        available: { type: integer }
+        holds: { type: array, items: { $ref: "#/components/schemas/ManufacturingHoldSummary" } }
+        allocations: { type: array, items: { $ref: "#/components/schemas/ManufacturingAllocationSummary" } }
+    ManufacturingOrderReadiness:
+      type: object
+      required: [orderId, readiness, items, manualReviewRequired]
+      properties:
+        orderId: { type: integer }
+        readiness: { type: string, enum: [FULLY_ALLOCATED, PARTIALLY_ALLOCATED, WAITING_FOR_COMPONENTS] }
+        manualReviewRequired: { type: boolean }
+        items:
+          type: array
+          items:
+            type: object
+            required: [orderItemId, readiness, components, manualReviewRequired]
+            properties:
+              orderItemId: { type: integer }
+              readiness: { type: string, enum: [FULLY_ALLOCATED, PARTIALLY_ALLOCATED, WAITING_FOR_COMPONENTS] }
+              manualReviewRequired: { type: boolean }
+              components:
+                type: array
+                items:
+                  type: object
+                  required: [componentId, sku, name, required, allocated, shortfall, status, manualReviewRequired, manualReviewReason]
+                  properties:
+                    componentId: { type: integer }
+                    sku: { type: string }
+                    name: { type: string }
+                    required: { type: integer }
+                    allocated: { type: integer }
+                    shortfall: { type: integer }
+                    status: { type: string, enum: [CONFIRMED, RELEASED] }
+                    manualReviewRequired: { type: boolean }
+                    manualReviewReason: { type: ["string", "null"] }
     ManufacturingVariantClassificationInput:
       type: object
       additionalProperties: false

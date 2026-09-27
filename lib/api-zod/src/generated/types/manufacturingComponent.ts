@@ -24,6 +24,7 @@ export interface ManufacturingComponent {
   /** @nullable */
   leadDays: number | null;
   active: boolean;
+  replenishable: boolean;
   physicalBalance: number;
   createdAt: Date;
   updatedAt: Date;

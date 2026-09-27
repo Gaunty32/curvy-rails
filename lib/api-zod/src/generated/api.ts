@@ -24,6 +24,7 @@ export const ListManufacturingComponentsResponseItem = zod.object({
   "targetLevel": zod.number().int(),
   "leadDays": zod.number().int().nullable(),
   "active": zod.boolean(),
+  "replenishable": zod.boolean(),
   "physicalBalance": zod.number().int(),
   "createdAt": zod.date(),
   "updatedAt": zod.date()
@@ -50,6 +51,7 @@ export const createManufacturingComponentBodyTargetLevelMin = 0;
 export const createManufacturingComponentBodyLeadDaysMin = 0;
 
 export const createManufacturingComponentBodyActiveDefault = true;
+export const createManufacturingComponentBodyReplenishableDefault = false;
 
 export const CreateManufacturingComponentBody = zod.object({
   "sku": zod.string().min(1).max(createManufacturingComponentBodySkuMax),
@@ -62,7 +64,8 @@ export const CreateManufacturingComponentBody = zod.object({
   "reorderLevel": zod.number().int().min(createManufacturingComponentBodyReorderLevelMin).default(createManufacturingComponentBodyReorderLevelDefault),
   "targetLevel": zod.number().int().min(createManufacturingComponentBodyTargetLevelMin).default(createManufacturingComponentBodyTargetLevelDefault),
   "leadDays": zod.number().int().min(createManufacturingComponentBodyLeadDaysMin).nullish(),
-  "active": zod.boolean().default(createManufacturingComponentBodyActiveDefault)
+  "active": zod.boolean().default(createManufacturingComponentBodyActiveDefault),
+  "replenishable": zod.boolean().default(createManufacturingComponentBodyReplenishableDefault)
 })
 
 export const CreateManufacturingComponentResponse = zod.object({
@@ -78,6 +81,7 @@ export const CreateManufacturingComponentResponse = zod.object({
   "targetLevel": zod.number().int(),
   "leadDays": zod.number().int().nullable(),
   "active": zod.boolean(),
+  "replenishable": zod.boolean(),
   "physicalBalance": zod.number().int(),
   "createdAt": zod.date(),
   "updatedAt": zod.date()
@@ -119,7 +123,8 @@ export const UpdateManufacturingComponentBody = zod.object({
   "reorderLevel": zod.number().int().min(updateManufacturingComponentBodyReorderLevelMin).optional(),
   "targetLevel": zod.number().int().min(updateManufacturingComponentBodyTargetLevelMin).optional(),
   "leadDays": zod.number().int().min(updateManufacturingComponentBodyLeadDaysMin).nullish(),
-  "active": zod.boolean().optional()
+  "active": zod.boolean().optional(),
+  "replenishable": zod.boolean().optional()
 })
 
 export const UpdateManufacturingComponentResponse = zod.object({
@@ -135,6 +140,7 @@ export const UpdateManufacturingComponentResponse = zod.object({
   "targetLevel": zod.number().int(),
   "leadDays": zod.number().int().nullable(),
   "active": zod.boolean(),
+  "replenishable": zod.boolean(),
   "physicalBalance": zod.number().int(),
   "createdAt": zod.date(),
   "updatedAt": zod.date()
@@ -471,6 +477,198 @@ export const CreateManufacturingVariantBomResponse = zod.object({
   "id": zod.number().int(),
   "bomId": zod.number().int()
 })))
+})
+
+
+/**
+ * @summary Read published variant component availability
+ */
+
+
+
+export const GetShopVariantAvailabilityParams = zod.object({
+  "variantId": zod.coerce.number().int().min(1)
+})
+
+export const GetShopVariantAvailabilityResponse = zod.object({
+  "variantId": zod.number().int(),
+  "manufacturingEnabled": zod.literal(true),
+  "status": zod.enum(['IN_STOCK', 'LOW_STOCK', 'AVAILABLE_TO_ORDER', 'OUT_OF_STOCK'])
+})
+
+
+/**
+ * @summary Read authoritative staff availability for a variant
+ */
+
+
+
+export const GetManufacturingVariantAvailabilityParams = zod.object({
+  "variantId": zod.coerce.number().int().min(1)
+})
+
+export const GetManufacturingVariantAvailabilityResponse = zod.object({
+  "variantId": zod.number().int(),
+  "manufacturingEnabled": zod.boolean(),
+  "bomId": zod.number().int().nullable(),
+  "producibleQuantity": zod.number().int().nullable(),
+  "status": zod.enum(['IN_STOCK', 'LOW_STOCK', 'AVAILABLE_TO_ORDER', 'OUT_OF_STOCK', 'LEGACY']),
+  "components": zod.array(zod.object({
+  "componentId": zod.number().int(),
+  "sku": zod.string(),
+  "name": zod.string(),
+  "quantityPerUnit": zod.number().int(),
+  "physical": zod.number().int(),
+  "held": zod.number().int(),
+  "allocated": zod.number().int(),
+  "available": zod.number().int(),
+  "producibleQuantity": zod.number().int()
+}))
+})
+
+
+/**
+ * Enabling requires an active current BOM and a recorded opening balance for every physical BOM component. Replenishment is disabled by default and requires component-level replenishable confirmation and lead days.
+ * @summary Configure explicit manufacturing eligibility and bounded replenishment
+ */
+
+
+
+export const UpdateManufacturingVariantAvailabilityPolicyParams = zod.object({
+  "variantId": zod.coerce.number().int().min(1)
+})
+
+export const updateManufacturingVariantAvailabilityPolicyBodyMaxOutstandingReplenishmentUnitsMin = 0;
+
+export const updateManufacturingVariantAvailabilityPolicyBodyPromisedReplenishmentDaysMin = 0;
+
+
+
+export const UpdateManufacturingVariantAvailabilityPolicyBody = zod.object({
+  "manufacturingEnabled": zod.boolean().optional(),
+  "allowOrderToReplenish": zod.boolean(),
+  "maxOutstandingReplenishmentUnits": zod.number().int().min(updateManufacturingVariantAvailabilityPolicyBodyMaxOutstandingReplenishmentUnitsMin),
+  "promisedReplenishmentDays": zod.number().int().min(updateManufacturingVariantAvailabilityPolicyBodyPromisedReplenishmentDaysMin)
+})
+
+export const UpdateManufacturingVariantAvailabilityPolicyResponse = zod.object({
+  "id": zod.number().int(),
+  "manufacturingEnabled": zod.boolean(),
+  "allowOrderToReplenish": zod.boolean(),
+  "maxOutstandingReplenishmentUnits": zod.number().int(),
+  "promisedReplenishmentDays": zod.number().int()
+})
+
+
+/**
+ * @summary Read shared low-stock threshold and checkout hold duration
+ */
+export const GetManufacturingAvailabilityPolicyResponse = zod.object({
+  "id": zod.number().int(),
+  "lowStockThreshold": zod.number().int(),
+  "holdDurationMinutes": zod.number().int()
+})
+
+
+/**
+ * @summary Configure shared low-stock threshold and checkout hold duration
+ */
+export const updateManufacturingAvailabilityPolicyBodyLowStockThresholdMin = 0;
+
+export const updateManufacturingAvailabilityPolicyBodyHoldDurationMinutesMax = 1440;
+
+
+
+export const UpdateManufacturingAvailabilityPolicyBody = zod.object({
+  "lowStockThreshold": zod.number().int().min(updateManufacturingAvailabilityPolicyBodyLowStockThresholdMin),
+  "holdDurationMinutes": zod.number().int().min(1).max(updateManufacturingAvailabilityPolicyBodyHoldDurationMinutesMax)
+})
+
+export const UpdateManufacturingAvailabilityPolicyResponse = zod.object({
+  "id": zod.number().int(),
+  "lowStockThreshold": zod.number().int(),
+  "holdDurationMinutes": zod.number().int()
+})
+
+
+/**
+ * @summary Inspect physical, held, allocated, and available component quantities
+ */
+
+
+
+export const GetManufacturingComponentBalancesParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const GetManufacturingComponentBalancesResponse = zod.object({
+  "componentId": zod.number().int(),
+  "sku": zod.string(),
+  "name": zod.string(),
+  "physical": zod.number().int(),
+  "held": zod.number().int(),
+  "allocated": zod.number().int(),
+  "available": zod.number().int(),
+  "holds": zod.array(zod.object({
+  "id": zod.number().int(),
+  "paymentIntentId": zod.string(),
+  "lineIndex": zod.number().int(),
+  "variantId": zod.number().int(),
+  "bomId": zod.number().int(),
+  "componentId": zod.number().int(),
+  "requiredQuantity": zod.number().int(),
+  "heldQuantity": zod.number().int(),
+  "shortfallQuantity": zod.number().int(),
+  "status": zod.enum(['ACTIVE', 'CONVERTED', 'RELEASED', 'EXPIRED']),
+  "expiresAt": zod.date()
+})),
+  "allocations": zod.array(zod.object({
+  "id": zod.number().int(),
+  "orderId": zod.number().int(),
+  "orderItemId": zod.number().int(),
+  "variantId": zod.number().int(),
+  "bomId": zod.number().int(),
+  "componentId": zod.number().int(),
+  "requiredQuantity": zod.number().int(),
+  "allocatedQuantity": zod.number().int(),
+  "shortfallQuantity": zod.number().int(),
+  "status": zod.enum(['CONFIRMED', 'RELEASED']),
+  "manualReviewRequired": zod.boolean(),
+  "manualReviewReason": zod.string().nullable()
+}))
+})
+
+
+/**
+ * @summary Report component allocation readiness and shortfalls for an order
+ */
+
+
+
+export const GetManufacturingOrderReadinessParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const GetManufacturingOrderReadinessResponse = zod.object({
+  "orderId": zod.number().int(),
+  "readiness": zod.enum(['FULLY_ALLOCATED', 'PARTIALLY_ALLOCATED', 'WAITING_FOR_COMPONENTS']),
+  "manualReviewRequired": zod.boolean(),
+  "items": zod.array(zod.object({
+  "orderItemId": zod.number().int(),
+  "readiness": zod.enum(['FULLY_ALLOCATED', 'PARTIALLY_ALLOCATED', 'WAITING_FOR_COMPONENTS']),
+  "manualReviewRequired": zod.boolean(),
+  "components": zod.array(zod.object({
+  "componentId": zod.number().int(),
+  "sku": zod.string(),
+  "name": zod.string(),
+  "required": zod.number().int(),
+  "allocated": zod.number().int(),
+  "shortfall": zod.number().int(),
+  "status": zod.enum(['CONFIRMED', 'RELEASED']),
+  "manualReviewRequired": zod.boolean(),
+  "manualReviewReason": zod.string().nullable()
+}))
+}))
 })
 
 

@@ -1,0 +1,728 @@
+# PHASE 1 APPROVED — PROCEED TO PHASE 2
+
+Phase 1 is approved.
+
+The separation between:
+
+* sellable variants
+* physical components
+* BOMs
+* component stock movements
+* legacy finished stock
+
+is correct.
+
+Do not alter that principle.
+
+Proceed with **Phase 2: Component Availability, Checkout Holds, Confirmed Allocations and Shortfalls**.
+
+Do NOT proceed into purchasing, production or despatch yet.
+
+---
+
+# 1. PHASE 2 OBJECTIVE
+
+At the end of Phase 2 the system must be able to answer reliably:
+
+### Can we make this product right now?
+
+### If a customer starts checkout, can we temporarily protect the required components?
+
+### Once payment is confirmed, can we allocate those components to that order?
+
+### If something is unavailable, exactly what are we short of?
+
+### If several sellable products use the same blank, are they all competing for the same real stock?
+
+These are the Phase 2 success criteria.
+
+---
+
+# 2. COMPONENT AVAILABILITY
+
+For each physical component calculate separately:
+
+**PHYSICAL**
+
+**TEMPORARILY HELD**
+
+**CONFIRMED ALLOCATED**
+
+**AVAILABLE**
+
+Where:
+
+AVAILABLE = PHYSICAL − ACTIVE HOLDS − CONFIRMED ALLOCATIONS
+
+Do not change physical stock merely because something has been held or allocated.
+
+Physical stock should ultimately reduce at production consumption, not at checkout.
+
+---
+
+# 3. BOM AVAILABILITY
+
+For a sellable variant, explode its CURRENT ACTIVE BOM.
+
+For every physical component calculate how many finished units that component can support.
+
+Example:
+
+Black Hoodie Size 22:
+
+8 available
+
+Good Vibes Transfer:
+
+23 available
+
+Each finished hoodie requires:
+
+1 hoodie
+1 transfer
+
+Immediate producible quantity:
+
+# 8
+
+If a component quantity in the BOM were 2 per finished unit, use the appropriate whole-number calculation.
+
+Non-stock production operations such as:
+
+HEAT PRESS
+
+EMBROIDERY OPERATION
+
+APPLICATION POSITION
+
+must NOT constrain physical availability.
+
+---
+
+# 4. SHARED COMPONENT COMPETITION
+
+This is critical.
+
+Suppose:
+
+Black Hoodie Size 22 = 10 available.
+
+It is shared by:
+
+Good Vibes Hoodie
+Curvy Rails Hoodie
+Friday Night Hoodie
+
+Each individual product may technically be capable of producing 10 units before any reservation exists.
+
+However, there are only TEN physical blanks.
+
+If a customer reserves:
+
+6 × Good Vibes Hoodie
+
+the other products must immediately see only:
+
+4 blanks
+
+available to support their BOMs.
+
+Do not create virtual stock pools per design.
+
+---
+
+# 5. WEBSITE DISPLAY
+
+Do not necessarily expose exact component-derived quantities to the customer.
+
+Create an availability service capable of returning appropriate customer-facing states such as:
+
+**IN STOCK**
+
+**LOW STOCK**
+
+**AVAILABLE TO ORDER**
+
+**OUT OF STOCK**
+
+Keep the underlying numeric availability internally.
+
+Thresholds/policies should be configurable rather than scattered through UI code.
+
+---
+
+# 6. IMPORTANT — AVAILABLE TO ORDER
+
+Do NOT implement unlimited back-ordering.
+
+Create an explicit policy.
+
+A sellable variant/component combination may eventually permit:
+
+# AVAILABLE TO ORDER
+
+where we are confident components can be replenished within the promised lead time.
+
+For Phase 2, build the architecture and policy fields required for this.
+
+However, unless explicitly configured otherwise:
+
+**insufficient component availability must prevent immediate-stock checkout.**
+
+Do not silently assume that because we have a supplier, we can obtain something.
+
+---
+
+# 7. CHECKOUT HOLD
+
+When a customer reaches the appropriate checkout stage, create a:
+
+# TEMPORARY COMPONENT HOLD
+
+The hold must contain:
+
+* session/customer reference
+* cart/order reference
+* sellable variant
+* BOM version
+* component
+* quantity
+* created timestamp
+* expiry timestamp
+* status
+
+Suggested statuses:
+
+ACTIVE
+
+CONVERTED
+
+RELEASED
+
+EXPIRED
+
+Do not reserve an imaginary finished garment.
+
+Reserve the actual physical BOM components.
+
+---
+
+# 8. HOLD EXPIRY
+
+Holds must automatically cease affecting availability after expiry.
+
+Make the hold duration configurable.
+
+Do not rely exclusively on a scheduled cleanup job to restore availability.
+
+Availability calculations must recognise an expired hold as expired even if housekeeping has not physically cleaned the row yet.
+
+This prevents stale holds from blocking stock.
+
+---
+
+# 9. ATOMIC RESERVATION
+
+This is one of the most important technical requirements.
+
+Two customers must NOT both successfully reserve the final physical component.
+
+Example:
+
+1 × Black Hoodie Size 24 remains.
+
+Customer A attempts checkout.
+
+Customer B attempts checkout simultaneously.
+
+Only ONE may successfully obtain the hold.
+
+Use proper database transaction/locking/concurrency controls.
+
+Do not solve this using only:
+
+"read quantity → check → write hold"
+
+without appropriate locking.
+
+---
+
+# 10. CONFIRMED PAYMENT
+
+When payment is genuinely confirmed:
+
+TEMPORARY HOLD
+
+becomes:
+
+# CONFIRMED COMPONENT ALLOCATION
+
+The confirmed allocation must retain:
+
+* order
+* order item
+* sellable variant
+* BOM version/snapshot
+* component
+* quantity
+* allocation timestamp
+* status
+
+Do not reduce physical component stock at this point.
+
+Instead:
+
+Physical = unchanged
+
+Allocated = increased
+
+Available = reduced
+
+Later production consumption will deal with the physical deduction.
+
+---
+
+# 11. BOM SNAPSHOT
+
+The confirmed order must retain the BOM/version applicable when the customer purchased.
+
+Example:
+
+Monday:
+
+Good Vibes Hoodie uses Transfer A.
+
+Customer orders.
+
+Wednesday:
+
+Admin changes future product to Transfer B.
+
+Monday's order must STILL require:
+
+Transfer A.
+
+Do not recalculate an existing paid order using the newest BOM.
+
+---
+
+# 12. PAYMENT IDEMPOTENCY
+
+Payment confirmation must be retry-safe.
+
+The same payment/provider callback may be received more than once.
+
+It must NOT:
+
+* create another order
+* create duplicate allocations
+* double reserve components
+* create duplicate shortfalls.
+
+Use durable idempotency/reference constraints.
+
+Do not rely only on application-level "if already processed" logic.
+
+---
+
+# 13. ABANDONED / FAILED CHECKOUT
+
+If checkout is abandoned or payment fails:
+
+ACTIVE HOLD
+
+↓
+
+RELEASED / EXPIRED
+
+↓
+
+Components become available again.
+
+This should immediately affect all sellable variants using those components.
+
+---
+
+# 14. CUSTOMER CANCELLATION
+
+If a confirmed order is cancelled before its components have been consumed:
+
+CONFIRMED ALLOCATION
+
+↓
+
+RELEASED
+
+↓
+
+Components become available again.
+
+Do not create a physical stock increase because physical stock was never reduced.
+
+This distinction is important.
+
+---
+
+# 15. SHORTFALL ENGINE
+
+For confirmed orders where the configured policy permits order-to-replenish:
+
+calculate component shortfalls.
+
+Example:
+
+Order requires:
+
+4 × Black Hoodie Size 22
+4 × Good Vibes Transfer
+
+Available at allocation:
+
+Black Hoodie = 2
+Transfer = 20
+
+Allocate:
+
+2 × Black Hoodie
+4 × Transfer
+
+Shortfall:
+
+# 2 × BLACK HOODIE SIZE 22
+
+The system should know:
+
+Order requirement = 4
+
+Allocated = 2
+
+Shortfall = 2
+
+Do not simply mark the entire order "out of stock".
+
+---
+
+# 16. DO NOT PURCHASE YET
+
+Phase 2 should identify shortfalls.
+
+It should NOT yet:
+
+* create supplier POs
+* send supplier orders
+* calculate target-stock replenishment
+* receive goods
+* move production jobs.
+
+Those belong to subsequent phases.
+
+However, design the shortfall output so Phase 3 purchasing can consume it cleanly.
+
+---
+
+# 17. ORDER READINESS
+
+Introduce a reliable internal readiness calculation.
+
+An order/order line should be able to report:
+
+# FULLY ALLOCATED
+
+Everything required is allocated.
+
+or:
+
+# PARTIALLY ALLOCATED
+
+Some required components are allocated but others are short.
+
+or:
+
+# WAITING FOR COMPONENTS
+
+Required physical components are unavailable.
+
+Do not confuse this with production status yet.
+
+This is component readiness.
+
+---
+
+# 18. ADMIN VISIBILITY
+
+Add useful Phase 2 visibility to staff screens.
+
+For an order show:
+
+## COMPONENT REQUIREMENTS
+
+Example:
+
+GOOD VIBES HOODIE — BLACK — 22
+
+**Black Hoodie 22**
+
+Required: 1
+Allocated: 1
+Shortfall: 0
+✓ READY
+
+**Good Vibes Transfer**
+
+Required: 1
+Allocated: 0
+Shortfall: 1
+⚠ SHORT
+
+Overall:
+
+# WAITING FOR COMPONENTS
+
+Staff should immediately understand WHY an order cannot proceed.
+
+---
+
+# 19. COMPONENT SCREEN
+
+On the component screen show:
+
+Physical
+
+Active checkout holds
+
+Confirmed allocations
+
+Available
+
+Example:
+
+## BLACK HOODIE — SIZE 22
+
+Physical: 24
+
+Checkout holds: 2
+
+Confirmed allocations: 7
+
+# AVAILABLE: 15
+
+Also allow staff to inspect what is consuming those quantities.
+
+For example:
+
+Checkout hold → session/order reference
+
+Allocation → CR-10482
+
+Allocation → CR-10491
+
+This will be extremely useful operationally.
+
+---
+
+# 20. DO NOT MIX HOLDS WITH THE STOCK LEDGER
+
+A temporary checkout hold is NOT a physical stock movement.
+
+A confirmed allocation is NOT a physical stock movement.
+
+Therefore do not create misleading physical ledger entries such as:
+
+CHECKOUT −1
+
+The physical ledger remains about actual physical changes.
+
+Keep:
+
+PHYSICAL MOVEMENTS
+
+and:
+
+RESERVATIONS / ALLOCATIONS
+
+separate but reconcilable.
+
+---
+
+# 21. LEGACY STOCK
+
+Do not switch legacy variant quantities over automatically.
+
+Only products/components explicitly configured for the new BOM/component model should use Phase 2 component availability.
+
+Legacy products must continue to behave as they currently do until intentionally migrated.
+
+We need a controlled coexistence period.
+
+---
+
+# 22. AVAILABILITY SERVICE
+
+Do not bury this logic separately in:
+
+product page
+
+cart
+
+checkout
+
+admin
+
+API.
+
+Create one authoritative availability/reservation service.
+
+The same underlying rules should be used everywhere.
+
+This avoids:
+
+product page says "in stock"
+
+while:
+
+checkout says "out of stock."
+
+---
+
+# 23. REQUIRED TESTS
+
+Before Phase 2 is complete demonstrate tests for:
+
+### Basic availability
+
+1. Blank 10 / transfer 20 = producible 10.
+2. Blank 20 / transfer 7 = producible 7.
+3. Component BOM quantity >1 calculates correctly.
+4. Non-stock operation does not constrain availability.
+
+### Shared components
+
+5. Two products share the same blank.
+6. Reservation against Product A immediately reduces availability supporting Product B.
+
+### Holds
+
+7. Hold reduces available but not physical stock.
+8. Expired hold stops affecting availability.
+9. Released hold restores availability.
+10. Failed checkout releases hold.
+
+### Concurrency
+
+11. Two simultaneous customers compete for the final component.
+12. Only one reservation succeeds.
+
+### Payment
+
+13. Successful payment converts hold to confirmed allocation.
+14. Physical stock remains unchanged.
+15. Duplicate payment callback cannot duplicate allocation.
+
+### Cancellation
+
+16. Cancellation releases confirmed allocation.
+17. Physical stock does not incorrectly increase.
+
+### BOM history
+
+18. Existing paid order retains original BOM after product BOM changes.
+
+### Shortfalls
+
+19. Partial component availability creates correct allocation and shortfall.
+20. Multiple missing components produce independent shortfalls.
+
+### Legacy
+
+21. Legacy non-BOM product continues existing behaviour.
+
+Do not only test the UI.
+
+Test concurrency and inventory invariants at database/service level.
+
+---
+
+# 24. IMPORTANT SCENARIO TO DEMONSTRATE
+
+Create a test scenario with:
+
+Physical stock:
+
+Black Hoodie Size 22 = 10
+
+Good Vibes Transfer = 30
+
+Curvy Rails Transfer = 30
+
+Products:
+
+GOOD VIBES HOODIE SIZE 22
+
+requires:
+
+1 × Black Hoodie 22
+1 × Good Vibes Transfer
+
+CURVY RAILS HOODIE SIZE 22
+
+requires:
+
+1 × Black Hoodie 22
+1 × Curvy Rails Transfer
+
+Then:
+
+Customer A places/holds:
+
+6 × Good Vibes Hoodie
+
+Expected:
+
+Black Hoodie available = 4
+
+Good Vibes Hoodie immediate availability = 4
+
+Curvy Rails Hoodie immediate availability = 4
+
+Then Customer B purchases:
+
+4 × Curvy Rails Hoodie.
+
+Expected:
+
+Black Hoodie available = 0
+
+Neither design can promise another immediately producible Size 22 hoodie.
+
+This is the behaviour I particularly want demonstrated.
+
+---
+
+# 25. STOP POINT
+
+Implement Phase 2 only.
+
+Do not proceed into:
+
+* consolidated purchasing
+* purchase-order generation
+* goods-in allocation
+* production
+* picking
+* QC
+* despatch
+
+After Phase 2:
+
+1. Run all tests.
+2. Show the availability calculations.
+3. Demonstrate the shared-component scenario above.
+4. Demonstrate simultaneous competition for final stock.
+5. Demonstrate an expired hold.
+6. Demonstrate payment conversion.
+7. Demonstrate payment retry/idempotency.
+8. Demonstrate a partial allocation/shortfall.
+9. Confirm legacy products still use legacy behaviour.
+10. Report any architectural issues discovered.
+
+Then STOP for review before Phase 3.

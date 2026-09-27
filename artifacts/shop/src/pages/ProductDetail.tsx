@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSEO } from '@/hooks/useSEO';
-import { useWcProduct, useBrandingOptions } from '@/hooks/use-wc';
+import { useWcProduct, useBrandingOptions, useShopVariantAvailability } from '@/hooks/use-wc';
 import { proxyImageUrl } from '@/lib/imageProxy';
 import { Link, Redirect, useParams } from 'wouter';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -693,6 +693,25 @@ export default function ProductDetail() {
     ) ?? null;
   }, [product, selectedOptions]);
 
+  // Only a completely chosen, manufacturing-enabled variant has a public
+  // component availability state. Partial selections can resolve to the first
+  // variation for legacy price/image purposes, but must not show its availability.
+  const selectedManufacturingVariantId =
+    product?.attributes?.every((attr: any) => Boolean(selectedOptions[attr.name]))
+      && product?.attributes?.every((attr: any) =>
+        variation?.attributes?.some((selected: any) =>
+          selected.name === attr.name && selected.option === selectedOptions[attr.name]
+        )
+      )
+      && variation?.manufacturingEnabled === true
+      && Number.isInteger(Number(variation.id))
+      ? Number(variation.id)
+      : undefined;
+  const manufacturingAvailability = useShopVariantAvailability(
+    selectedManufacturingVariantId,
+    selectedManufacturingVariantId !== undefined,
+  );
+
   // Older syncs copied the then-current parent SKU onto every colour variant.
   // If all variants still share one identical SKU that now differs from the
   // product SKU, treat it as stale inheritance rather than a colour-specific
@@ -1047,6 +1066,46 @@ export default function ProductDetail() {
               </div>
             );
           })}
+
+          {selectedManufacturingVariantId !== undefined && (
+            <div
+              className="mb-5 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm"
+              role="status"
+              aria-live="polite"
+              data-testid="status-selected-variant-availability"
+            >
+              {manufacturingAvailability.isPending ? (
+                <div className="space-y-2" aria-label="Checking availability">
+                  <div className="h-4 w-32 animate-pulse rounded bg-gray-200" />
+                  <div className="h-3 w-48 animate-pulse rounded bg-gray-200" />
+                </div>
+              ) : manufacturingAvailability.isError || !manufacturingAvailability.data ? (
+                <p className="text-gray-600">Availability is temporarily unavailable. Please contact us if you need a confirmed timeframe.</p>
+              ) : (
+                <>
+                  <p className="font-semibold text-gray-900">
+                    {{
+                      IN_STOCK: 'Ready for personalisation',
+                      LOW_STOCK: 'Limited availability',
+                      AVAILABLE_TO_ORDER: 'Available to order',
+                      OUT_OF_STOCK: 'Currently unavailable',
+                    }[manufacturingAvailability.data.status]}
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-gray-600">
+                    {{
+                      IN_STOCK: 'Materials are available for this selection. Personalisation and delivery times still apply.',
+                      LOW_STOCK: 'Materials are limited for this selection. Please check with us for larger orders.',
+                      AVAILABLE_TO_ORDER: 'We can source materials for this selection; production will take longer.',
+                      OUT_OF_STOCK: 'We cannot currently confirm production for this selection. Please contact us for options.',
+                    }[manufacturingAvailability.data.status]}
+                    {manufacturingAvailability.data.status === 'AVAILABLE_TO_ORDER' && manufacturingAvailability.data.leadDays
+                      ? ` Estimated material lead time: around ${manufacturingAvailability.data.leadDays} days, before personalisation and delivery.`
+                      : ''}
+                  </p>
+                </>
+              )}
+            </div>
+          )}
 
           <GuidancePanel guidance={product.guidance} productName={product.name} productUrl={typeof window !== 'undefined' ? window.location.href : undefined} />
 

@@ -33,6 +33,7 @@ export interface ManufacturingComponent {
   /** @nullable */
   leadDays: number | null;
   active: boolean;
+  replenishable: boolean;
   physicalBalance: number;
   createdAt: string;
   updatedAt: string;
@@ -79,6 +80,7 @@ export interface ManufacturingComponentInput {
      */
   leadDays?: number | null;
   active?: boolean;
+  replenishable?: boolean;
 }
 
 export type ManufacturingComponentUpdateType = typeof ManufacturingComponentUpdateType[keyof typeof ManufacturingComponentUpdateType];
@@ -122,6 +124,203 @@ export interface ManufacturingComponentUpdate {
      */
   leadDays?: number | null;
   active?: boolean;
+  replenishable?: boolean;
+}
+
+export interface ManufacturingAvailabilityComponent {
+  componentId: number;
+  sku: string;
+  name: string;
+  quantityPerUnit: number;
+  physical: number;
+  held: number;
+  allocated: number;
+  available: number;
+  producibleQuantity: number;
+}
+
+export type ManufacturingAvailabilityStatus = typeof ManufacturingAvailabilityStatus[keyof typeof ManufacturingAvailabilityStatus];
+
+
+export const ManufacturingAvailabilityStatus = {
+  IN_STOCK: 'IN_STOCK',
+  LOW_STOCK: 'LOW_STOCK',
+  AVAILABLE_TO_ORDER: 'AVAILABLE_TO_ORDER',
+  OUT_OF_STOCK: 'OUT_OF_STOCK',
+  LEGACY: 'LEGACY',
+} as const;
+
+export interface ManufacturingAvailability {
+  variantId: number;
+  manufacturingEnabled: boolean;
+  /** @nullable */
+  bomId: number | null;
+  /** @nullable */
+  producibleQuantity: number | null;
+  status: ManufacturingAvailabilityStatus;
+  components: ManufacturingAvailabilityComponent[];
+}
+
+export type CustomerVariantAvailabilityStatus = typeof CustomerVariantAvailabilityStatus[keyof typeof CustomerVariantAvailabilityStatus];
+
+
+export const CustomerVariantAvailabilityStatus = {
+  IN_STOCK: 'IN_STOCK',
+  LOW_STOCK: 'LOW_STOCK',
+  AVAILABLE_TO_ORDER: 'AVAILABLE_TO_ORDER',
+  OUT_OF_STOCK: 'OUT_OF_STOCK',
+} as const;
+
+export interface CustomerVariantAvailability {
+  variantId: number;
+  manufacturingEnabled: true;
+  status: CustomerVariantAvailabilityStatus;
+}
+
+export interface ManufacturingVariantAvailabilityPolicyInput {
+  manufacturingEnabled?: boolean;
+  allowOrderToReplenish: boolean;
+  /** @minimum 0 */
+  maxOutstandingReplenishmentUnits: number;
+  /** @minimum 0 */
+  promisedReplenishmentDays: number;
+}
+
+export interface ManufacturingVariantPolicy {
+  id: number;
+  manufacturingEnabled: boolean;
+  allowOrderToReplenish: boolean;
+  maxOutstandingReplenishmentUnits: number;
+  promisedReplenishmentDays: number;
+}
+
+export interface ManufacturingAvailabilityPolicyInput {
+  /** @minimum 0 */
+  lowStockThreshold: number;
+  /**
+     * @minimum 1
+     * @maximum 1440
+     */
+  holdDurationMinutes: number;
+}
+
+export interface ManufacturingAvailabilityPolicy {
+  id: number;
+  lowStockThreshold: number;
+  holdDurationMinutes: number;
+}
+
+export type ManufacturingHoldSummaryStatus = typeof ManufacturingHoldSummaryStatus[keyof typeof ManufacturingHoldSummaryStatus];
+
+
+export const ManufacturingHoldSummaryStatus = {
+  ACTIVE: 'ACTIVE',
+  CONVERTED: 'CONVERTED',
+  RELEASED: 'RELEASED',
+  EXPIRED: 'EXPIRED',
+} as const;
+
+export interface ManufacturingHoldSummary {
+  id: number;
+  paymentIntentId: string;
+  lineIndex: number;
+  variantId: number;
+  bomId: number;
+  componentId: number;
+  requiredQuantity: number;
+  heldQuantity: number;
+  shortfallQuantity: number;
+  status: ManufacturingHoldSummaryStatus;
+  expiresAt: string;
+}
+
+export type ManufacturingAllocationSummaryStatus = typeof ManufacturingAllocationSummaryStatus[keyof typeof ManufacturingAllocationSummaryStatus];
+
+
+export const ManufacturingAllocationSummaryStatus = {
+  CONFIRMED: 'CONFIRMED',
+  RELEASED: 'RELEASED',
+} as const;
+
+export interface ManufacturingAllocationSummary {
+  id: number;
+  orderId: number;
+  orderItemId: number;
+  variantId: number;
+  bomId: number;
+  componentId: number;
+  requiredQuantity: number;
+  allocatedQuantity: number;
+  shortfallQuantity: number;
+  status: ManufacturingAllocationSummaryStatus;
+  manualReviewRequired: boolean;
+  /** @nullable */
+  manualReviewReason: string | null;
+}
+
+export interface ManufacturingComponentBalances {
+  componentId: number;
+  sku: string;
+  name: string;
+  physical: number;
+  held: number;
+  allocated: number;
+  available: number;
+  holds: ManufacturingHoldSummary[];
+  allocations: ManufacturingAllocationSummary[];
+}
+
+export type ManufacturingOrderReadinessReadiness = typeof ManufacturingOrderReadinessReadiness[keyof typeof ManufacturingOrderReadinessReadiness];
+
+
+export const ManufacturingOrderReadinessReadiness = {
+  FULLY_ALLOCATED: 'FULLY_ALLOCATED',
+  PARTIALLY_ALLOCATED: 'PARTIALLY_ALLOCATED',
+  WAITING_FOR_COMPONENTS: 'WAITING_FOR_COMPONENTS',
+} as const;
+
+export type ManufacturingOrderReadinessItemsItemReadiness = typeof ManufacturingOrderReadinessItemsItemReadiness[keyof typeof ManufacturingOrderReadinessItemsItemReadiness];
+
+
+export const ManufacturingOrderReadinessItemsItemReadiness = {
+  FULLY_ALLOCATED: 'FULLY_ALLOCATED',
+  PARTIALLY_ALLOCATED: 'PARTIALLY_ALLOCATED',
+  WAITING_FOR_COMPONENTS: 'WAITING_FOR_COMPONENTS',
+} as const;
+
+export type ManufacturingOrderReadinessItemsItemComponentsItemStatus = typeof ManufacturingOrderReadinessItemsItemComponentsItemStatus[keyof typeof ManufacturingOrderReadinessItemsItemComponentsItemStatus];
+
+
+export const ManufacturingOrderReadinessItemsItemComponentsItemStatus = {
+  CONFIRMED: 'CONFIRMED',
+  RELEASED: 'RELEASED',
+} as const;
+
+export type ManufacturingOrderReadinessItemsItemComponentsItem = {
+  componentId: number;
+  sku: string;
+  name: string;
+  required: number;
+  allocated: number;
+  shortfall: number;
+  status: ManufacturingOrderReadinessItemsItemComponentsItemStatus;
+  manualReviewRequired: boolean;
+  /** @nullable */
+  manualReviewReason: string | null;
+};
+
+export type ManufacturingOrderReadinessItemsItem = {
+  orderItemId: number;
+  readiness: ManufacturingOrderReadinessItemsItemReadiness;
+  manualReviewRequired: boolean;
+  components: ManufacturingOrderReadinessItemsItemComponentsItem[];
+};
+
+export interface ManufacturingOrderReadiness {
+  orderId: number;
+  readiness: ManufacturingOrderReadinessReadiness;
+  manualReviewRequired: boolean;
+  items: ManufacturingOrderReadinessItemsItem[];
 }
 
 export type ManufacturingVariantClassificationInputClassification = typeof ManufacturingVariantClassificationInputClassification[keyof typeof ManufacturingVariantClassificationInputClassification];

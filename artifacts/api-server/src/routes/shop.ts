@@ -9,6 +9,7 @@ import { SOPHIE_CHAT_PROMPT } from "../lib/sophie-chat-prompt.js";
 import { sendEmail } from "../services/email.js";
 import { fireWorkflow } from "../services/workflow-engine.js";
 import { getUncachableStripeClient, getStripePublishableKey } from "../services/stripeClient.js";
+import { createManufacturingAvailabilityService } from "../services/manufacturing-availability.js";
 import { isStoredProductImageValid } from "../services/product-image-storage.js";
 import { toDisplayCase } from "../lib/display-case.js";
 import { getBusinessConfig, resolveShopShippingConfiguration } from "../lib/business-config.js";
@@ -16,6 +17,72 @@ import { normalizeShopPostcode, validateShopShippingEligibility, verifyShopShipp
 import { createHash } from "node:crypto";
 
 const router: IRouter = Router();
+const componentAvailability = createManufacturingAvailabilityService(db);
+
+type CheckoutComponentLine = { variantId: number; quantity: number; lineIndex: number };
+
+async function getExplicitlyEnabledCheckoutLines(items: PricedShopItem[]): Promise<CheckoutComponentLine[]> {
+  const result: CheckoutComponentLine[] = [];
+  for (const [lineIndex, item] of items.entries()) {
+    // Variation IDs in pricedItems are the authoritative internal product_variants.id values.
+    // Bundle components and legacy products are deliberately not inferred to be component-managed.
+    const variantId = Number(item.variationId);
+    if (!Number.isInteger(variantId) || variantId <= 0) continue;
+    const enabled = await db.execute(sql`
+      SELECT id FROM product_variants
+      WHERE id = ${variantId} AND manufacturing_enabled = true
+      LIMIT 1
+    `);
+    if (enabled.rows.length) result.push({ variantId, quantity: item.quantity, lineIndex });
+  }
+  return result;
+}
+
+async function hasComponentManagedBundleConstituent(items: PricedShopItem[]): Promise<boolean> {
+  for (const item of items) {
+    for (const component of item.bundleComponents ?? []) {
+      const variantId = Number(component.variationId);
+      if (!Number.isInteger(variantId) || variantId <= 0) continue;
+      const enabled = await db.execute(sql`
+        SELECT id FROM product_variants
+        WHERE id = ${variantId} AND manufacturing_enabled = true
+        LIMIT 1
+      `);
+      if (enabled.rows.length) return true;
+    }
+  }
+  return false;
+}
+
+function componentShortfallFrom(error: any): unknown {
+  return error?.shortfall ?? error?.shortfalls ?? error?.details?.shortfall ?? error?.details?.shortfalls ?? null;
+}
+
+async function describeCheckoutComponentShortfall(lines: CheckoutComponentLine[]): Promise<Array<Record<string, unknown>>> {
+  const requiredByComponent = new Map<number, { name: string; sku: string; required: number; available: number }>();
+  for (const line of lines) {
+    const availability = await componentAvailability.availability(line.variantId);
+    for (const component of availability.components ?? []) {
+      const current = requiredByComponent.get(component.componentId) ?? {
+        name: component.name,
+        sku: component.sku,
+        required: 0,
+        available: Number(component.available),
+      };
+      current.required += Number(component.quantityPerUnit) * line.quantity;
+      requiredByComponent.set(component.componentId, current);
+    }
+  }
+  return [...requiredByComponent.values()]
+    .filter((component) => component.required > component.available)
+    .map((component) => ({
+      component: component.name,
+      sku: component.sku,
+      required: component.required,
+      available: component.available,
+      shortfall: component.required - component.available,
+    }));
+}
 
 // ── Internal-DB helpers (replaces WC external proxy) ─────────────────────────
 
@@ -1096,7 +1163,7 @@ router.get("/shop/wc/products/:identifier", async (req, res): Promise<void> => {
 
     const variantRows = await db.execute(sql`
       SELECT id, colour, size, sleeve, price, vat_rate, image_url, sku,
-             stock_quantity, is_available, woo_variation_id
+             stock_quantity, is_available, woo_variation_id, manufacturing_enabled
       FROM product_variants
       WHERE product_id = ${p.id}
       ORDER BY colour ASC, size ASC, sleeve ASC
@@ -1198,6 +1265,7 @@ router.get("/shop/wc/products/:identifier", async (req, res): Promise<void> => {
         regularPrice: null,
         salePrice: null,
         stockStatus: (v.stock_quantity ?? 0) > 0 ? "instock" : "outofstock",
+        manufacturingEnabled: v.manufacturing_enabled === true,
         sku: v.sku ?? p.sku,
         image: v.image_url ?? null,
         attributes: attrs,
@@ -1929,6 +1997,10 @@ router.post("/shop/stripe/payment-intent", async (req, res): Promise<void> => {
       return;
     }
     validated = await validateShopBasket(cartItems, shippingMethod as keyof typeof SHIPPING_PRICES);
+    if (await hasComponentManagedBundleConstituent(validated.items)) {
+      res.status(409).json({ error: "Component-managed bundle checkout is not yet supported." });
+      return;
+    }
     if (Math.abs(validated.totals.total - amount) > 0.011) {
       res.status(400).json({ error: "Payment amount does not match the authoritative basket total.", authoritativeTotal: validated.totals.total });
       return;
@@ -1942,6 +2014,8 @@ router.post("/shop/stripe/payment-intent", async (req, res): Promise<void> => {
     res.status(400).json({ error: error?.message ?? "Basket could not be priced." });
     return;
   }
+  let createdIntent: any = null;
+  let snapshotPersisted = false;
   try {
     const stripe = await getUncachableStripeClient();
     const amountPence = Math.round(validated.totals.total * 100);
@@ -1965,8 +2039,10 @@ router.post("/shop/stripe/payment-intent", async (req, res): Promise<void> => {
       },
       automatic_payment_methods: { enabled: true },
     });
+    createdIntent = intent;
     const createdAt = new Date().toISOString();
     const originalCartFingerprint = originalShopCartFingerprint(cartItems);
+    const componentLines = await getExplicitlyEnabledCheckoutLines(validated.items);
     const snapshot = {
       version: 1,
       paymentIntentId: intent.id,
@@ -1980,6 +2056,7 @@ router.post("/shop/stripe/payment-intent", async (req, res): Promise<void> => {
       basketFingerprint: validated.fingerprint,
       amountPence,
       promotionCode: null,
+      componentHoldLineIndexes: componentLines.map((line) => line.lineIndex),
     };
     await db.execute(sql`
       INSERT INTO shop_checkout_intents
@@ -1989,9 +2066,71 @@ router.post("/shop/stripe/payment-intent", async (req, res): Promise<void> => {
         ${JSON.stringify(snapshot)}::jsonb, 'pending', ${createdAt}
       )
     `);
+    snapshotPersisted = true;
+
+    if (componentLines.length) {
+      try {
+        const holdResult: any = await componentAvailability.holdCheckout(
+          intent.id,
+          componentLines,
+          `shop:${validated.fingerprint}`,
+        );
+        const shortfalls = holdResult?.shortfalls ?? holdResult?.shortfall ?? holdResult?.details?.shortfalls;
+        if (holdResult?.ok === false || holdResult?.success === false || (Array.isArray(shortfalls) && shortfalls.length > 0)) {
+          const error: any = new Error("Insufficient component availability.");
+          error.shortfall = shortfalls ?? holdResult?.details ?? null;
+          throw error;
+        }
+      } catch (holdError: any) {
+        let shortfall = componentShortfallFrom(holdError);
+        if (!shortfall) {
+          try {
+            shortfall = await describeCheckoutComponentShortfall(componentLines);
+          } catch {
+            shortfall = null;
+          }
+        }
+        let snapshotFailure: unknown = null;
+        try {
+          await db.execute(sql`
+            UPDATE shop_checkout_intents
+            SET status = 'failed',
+                snapshot = snapshot || ${JSON.stringify({
+                  componentHoldFailure: shortfall ?? { message: "Component availability could not be reserved." },
+                })}::jsonb
+            WHERE payment_intent_id = ${intent.id}
+          `);
+        } catch (error) {
+          snapshotFailure = error;
+        }
+        try {
+          if (intent.status !== "succeeded" && typeof stripe.paymentIntents.cancel === "function") {
+            await stripe.paymentIntents.cancel(intent.id);
+          }
+        } catch (cancelError) {
+          logger.warn({ err: cancelError, paymentIntentId: intent.id }, "[shop/stripe] Failed to cancel checkout intent after reservation failure");
+        }
+        if (snapshotFailure) throw snapshotFailure;
+        res.status(409).json({
+          error: "Some required components are no longer available. Please review your basket.",
+          shortfall,
+        });
+        return;
+      }
+    }
     res.json({ clientSecret: intent.client_secret, paymentIntentId: intent.id, amount: validated.totals.total });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    if (createdIntent && !snapshotPersisted) {
+      try {
+        const stripe = await getUncachableStripeClient();
+        if (createdIntent.status !== "succeeded" && typeof stripe.paymentIntents.cancel === "function") {
+          await stripe.paymentIntents.cancel(createdIntent.id);
+        }
+      } catch (cancelError) {
+        logger.warn({ err: cancelError, paymentIntentId: createdIntent.id }, "[shop/stripe] Failed to cancel checkout intent after snapshot failure");
+      }
+    }
+    res.status(500).json({ error: "Checkout could not be prepared. Please try again." });
   }
 });
 
@@ -2003,6 +2142,11 @@ router.get("/shop/stripe/payment-intent/:id/status", async (req, res): Promise<v
     const stripe = await getUncachableStripeClient();
     const intent = await stripe.paymentIntents.retrieve(String(req.params.id));
     if (intent.metadata.source !== "shop") { res.status(404).json({ error: "Shop payment not found" }); return; }
+    // Only Stripe's canceled state is a definite terminal failure. A
+    // requires_payment_method intent may still be retried with another card.
+    if (intent.status === "canceled") {
+      await componentAvailability.releaseCheckout(intent.id);
+    }
     res.json({ status: intent.status });
   } catch (error) {
     logger.error({ err: error }, "[shop/stripe] Unable to check payment status");
@@ -2478,10 +2622,10 @@ router.post("/shop/orders", async (req, res): Promise<void> => {
     // Lock on the Stripe payment ID so simultaneous retries cannot create two
     // website orders. Keep all required order writes in one transaction: a paid
     // checkout must never leave an incomplete order that looks like a failure.
-    const { orderId, alreadyRecorded } = await db.transaction(async (tx) => {
+    const { orderId, alreadyRecorded, componentReview } = await db.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${d.paymentIntentId}))`);
     const lockedSnapshot = await tx.execute(sql`
-      SELECT status, order_id FROM shop_checkout_intents
+      SELECT status, order_id, snapshot FROM shop_checkout_intents
       WHERE payment_intent_id = ${d.paymentIntentId}
       FOR UPDATE
     `);
@@ -2504,12 +2648,18 @@ router.post("/shop/orders", async (req, res): Promise<void> => {
       if (prior.status === "cancelled") throw new Error("This paid order was cancelled and needs staff review. Do not pay again.");
       const items = await tx.execute(sql`SELECT 1 FROM order_items WHERE order_id = ${id} LIMIT 1`);
       if (!items.rows.length) throw new Error("Paid order needs staff review before it can be completed.");
+      const savedSnapshot = typeof (lockedSnapshot.rows[0] as any).snapshot === "string"
+        ? JSON.parse((lockedSnapshot.rows[0] as any).snapshot)
+        : (lockedSnapshot.rows[0] as any).snapshot;
+      const priorComponentReview = savedSnapshot?.componentReview?.requiresStaffReview
+        ? savedSnapshot.componentReview
+        : null;
       await tx.execute(sql`
         UPDATE shop_checkout_intents
         SET status = 'finalized', order_id = ${id}, finalized_at = COALESCE(finalized_at, now())
         WHERE payment_intent_id = ${d.paymentIntentId}
       `);
-      return { orderId: id, alreadyRecorded: true };
+      return { orderId: id, alreadyRecorded: true, componentReview: priorComponentReview };
     }
     const orderResult = await tx.execute(sql`
       INSERT INTO orders (
@@ -2537,7 +2687,8 @@ router.post("/shop/orders", async (req, res): Promise<void> => {
     await tx.execute(sql`UPDATE orders SET order_number = ${orderNumber} WHERE id = ${orderId}`);
 
     // Insert order items
-    for (const item of validated.items) {
+    const lineIndexToOrderItemId: Record<number, number> = {};
+    for (const [lineIndex, item] of validated.items.entries()) {
       const paidQty = item.quantity;
       const productId = item.wcProductId;
       const effectiveVatRate = item.vatRate;
@@ -2567,7 +2718,8 @@ router.post("/shop/orders", async (req, res): Promise<void> => {
         finishName = wardrobeMatch?.finish_name ?? null;
       }
 
-      if (paidQty > 0) await tx.execute(sql`
+      if (paidQty > 0) {
+        const insertedOrderItem = await tx.execute(sql`
         INSERT INTO order_items (
           order_id, product_id, product_name, quantity, unit_price, line_total,
           colour, size, finish_id, finish_name, notes, recipient_name, vat_rate
@@ -2593,7 +2745,11 @@ router.post("/shop/orders", async (req, res): Promise<void> => {
           ${item.wearerName?.trim() || null},
           ${String(effectiveVatRate)}
         )
-      `);
+        RETURNING id
+        `);
+        const orderItemId = Number((insertedOrderItem.rows[0] as any)?.id);
+        if (Number.isInteger(orderItemId) && orderItemId > 0) lineIndexToOrderItemId[lineIndex] = orderItemId;
+      }
       if (item.bundleComponents?.length) {
         for (const component of item.bundleComponents) {
           const componentExists = await tx.execute(sql`
@@ -2627,16 +2783,93 @@ router.post("/shop/orders", async (req, res): Promise<void> => {
         now()
       )
     `);
+    // Conversion consumes the immutable hold/BOM snapshot attached to the
+    // originally paid intent. The transaction rolls back order items and
+    // allocations together on failure, making retries safe.
+    let componentReview: Record<string, unknown> | null = null;
+    if (Array.isArray(checkoutSnapshot.componentHoldLineIndexes) && checkoutSnapshot.componentHoldLineIndexes.length) {
+      const allocations: any[] = await componentAvailability.convertPaidCheckout(
+        tx,
+        d.paymentIntentId,
+        orderId,
+        lineIndexToOrderItemId,
+      );
+      const allocationShortfalls = allocations
+        .filter((allocation) => Number(allocation.shortfallQuantity) > 0)
+        .map((allocation) => ({
+          lineIndex: Number(allocation.lineIndex),
+          component: allocation.componentNameSnapshot,
+          sku: allocation.componentSkuSnapshot,
+          required: Number(allocation.requiredQuantity),
+          allocated: Number(allocation.allocatedQuantity),
+          shortfall: Number(allocation.shortfallQuantity),
+        }));
+      const holdRows = await tx.execute(sql`
+        SELECT line_index, status FROM manufacturing_checkout_holds
+        WHERE payment_intent_id = ${d.paymentIntentId}
+      `);
+      const holds = holdRows.rows as Array<{ line_index: number; status: string }>;
+      const expectedHoldLines = checkoutSnapshot.componentHoldLineIndexes.map(Number);
+      const heldLines = new Set(holds.map((hold) => Number(hold.line_index)));
+      const missingHoldLines = expectedHoldLines.filter((lineIndex: number) => !heldLines.has(lineIndex));
+      const expiredHoldLines = [...new Set(holds
+        .filter((hold) => hold.status === "EXPIRED")
+        .map((hold) => Number(hold.line_index)))];
+      const releasedHoldLines = [...new Set(holds
+        .filter((hold) => hold.status === "RELEASED")
+        .map((hold) => Number(hold.line_index)))];
+      const needsComponentReview = allocationShortfalls.length > 0
+        || missingHoldLines.length > 0
+        || expiredHoldLines.length > 0
+        || releasedHoldLines.length > 0;
+      if (needsComponentReview) {
+        componentReview = {
+          requiresStaffReview: true,
+          fulfillmentStatus: "component_review_required",
+          ready: false,
+          allocationShortfalls,
+          missingHoldLines,
+          expiredHoldLines,
+          releasedHoldLines,
+        };
+        const reviewNote = "COMPONENT REVIEW REQUIRED: Paid checkout has component shortfalls or an expired/missing hold.";
+        await tx.execute(sql`
+          UPDATE orders
+          SET notes = concat_ws(' | ', notes, CAST(${reviewNote} AS text)),
+              portal_notes = concat_ws(E'\\n', portal_notes, CAST(${reviewNote} AS text)),
+              updated_at = now()
+          WHERE id = ${orderId}
+        `);
+        await tx.execute(sql`
+          INSERT INTO order_logs (order_id, action, actor, details, created_at)
+          VALUES (
+            ${orderId},
+            'Paid order requires component review',
+            'Website shop',
+            ${JSON.stringify(componentReview)},
+            now()
+          )
+        `);
+      }
+    }
     await tx.execute(sql`
       UPDATE shop_checkout_intents
-      SET status = 'finalized', order_id = ${orderId}, finalized_at = now()
+      SET status = 'finalized',
+          order_id = ${orderId},
+          finalized_at = now(),
+          snapshot = snapshot || ${JSON.stringify(componentReview ? { componentReview } : {})}::jsonb
       WHERE payment_intent_id = ${d.paymentIntentId}
     `);
-    return { orderId, alreadyRecorded: false };
+    return { orderId, alreadyRecorded: false, componentReview };
     });
     const orderNumber = `W${orderId}`;
     if (alreadyRecorded) {
-      res.json({ success: true, orderNumber, orderId });
+      res.json({
+        success: true,
+        orderNumber,
+        orderId,
+        ...(componentReview ? componentReview : {}),
+      });
       return;
     }
     // Attribution is strictly best-effort and written only after the paid order exists.
@@ -2822,7 +3055,12 @@ router.post("/shop/orders", async (req, res): Promise<void> => {
       }
     }
 
-    res.json({ success: true, orderNumber, orderId });
+    res.json({
+      success: true,
+      orderNumber,
+      orderId,
+      ...(componentReview ? componentReview : {}),
+    });
   } catch (e: any) {
     logger.error({ err: e }, "[shop/orders] Failed to create order");
     res.status(500).json({

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus, Trash2, Layers, AlertTriangle } from "lucide-react";
-import { useVariants, useBoms, useComponents, useCreateBom, useClassifyVariant, type Bom, type InventoryClassification } from "@/hooks/use-manufacturing";
+import { useVariants, useBoms, useComponents, useCreateBom, useClassifyVariant, useSaveVariantAvailabilityPolicy, type Variant, type Bom, type InventoryClassification } from "@/hooks/use-manufacturing";
 
 type ComponentLine = Bom["componentLines"][number];
 type OperationLine = Bom["operationLines"][number];
@@ -17,6 +17,39 @@ const classifications: { value: InventoryClassification; label: string; descript
   { value: "FINISHED_STOCK", label: "Finished stock", description: "Existing variant quantity represents finished decorated units." },
   { value: "COMPONENT_STOCK", label: "Component stock", description: "Label existing variant quantity as component-related for migration review." },
 ];
+
+function VariantAvailabilitySettings({ variant, productId, hasBom }: { variant: Variant; productId: number; hasBom: boolean }) {
+  const { toast } = useToast();
+  const savePolicy = useSaveVariantAvailabilityPolicy(productId, variant.id);
+  const [enabled, setEnabled] = useState(variant.manufacturingEnabled ?? false);
+  const [allowReplenish, setAllowReplenish] = useState(variant.allowOrderToReplenish ?? false);
+  const [limit, setLimit] = useState(String(variant.maxOutstandingReplenishmentUnits ?? 0));
+  const [days, setDays] = useState(String(variant.promisedReplenishmentDays ?? 0));
+  const valid = Number.isInteger(Number(limit)) && Number(limit) >= 0 && Number.isInteger(Number(days)) && Number(days) >= 0;
+  const changed = enabled !== !!variant.manufacturingEnabled || allowReplenish !== !!variant.allowOrderToReplenish || Number(limit) !== (variant.maxOutstandingReplenishmentUnits ?? 0) || Number(days) !== (variant.promisedReplenishmentDays ?? 0);
+  const submit = async () => {
+    if (!valid || !changed) return;
+    if (enabled && !variant.manufacturingEnabled && !window.confirm("Enable component availability for this variant? A current BOM and opening balance for every component are required. Legacy variant stock will not be transferred.")) return;
+    try {
+      await savePolicy.mutateAsync({ variantId: variant.id, data: { manufacturingEnabled: enabled, allowOrderToReplenish: allowReplenish, maxOutstandingReplenishmentUnits: Number(limit), promisedReplenishmentDays: Number(days) } });
+      toast({ title: "Availability policy saved", description: "No physical stock or legacy variant quantity was moved." });
+    } catch (error) { toast({ title: "Policy not saved", description: error instanceof Error ? error.message : "Please retry.", variant: "destructive" }); }
+  };
+  return <div className="rounded-lg border bg-muted/30 p-4 space-y-4" data-testid="variant-availability-settings">
+    <div><h2 className="text-sm font-semibold">Component availability policy</h2><p className="mt-1 text-xs text-muted-foreground">Opt this variant into BOM-based availability explicitly. Existing legacy stock remains separate.</p></div>
+    <label className="flex items-start gap-2 text-sm"><input data-testid="checkbox-manufacturing-enabled" type="checkbox" className="mt-1" checked={enabled} onChange={e => setEnabled(e.target.checked)} /><span><strong>Use component availability</strong><span className="block text-xs text-muted-foreground">Requires a saved current BOM and a counted opening balance for every physical component.</span></span></label>
+    {!hasBom && <p className="text-xs text-amber-800">Save a BOM version before enabling this variant.</p>}
+    <div className="border-t pt-4 space-y-3">
+      <label className="flex items-start gap-2 text-sm"><input data-testid="checkbox-order-to-replenish" type="checkbox" className="mt-1" checked={allowReplenish} onChange={e => setAllowReplenish(e.target.checked)} /><span><strong>Allow bounded order-to-replenish</strong><span className="block text-xs text-muted-foreground">Only applies if all BOM components are marked replenishable and their lead times fit the promise. No purchasing is triggered here.</span></span></label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="text-xs font-semibold text-muted-foreground">MAX OUTSTANDING UNITS<Input data-testid="input-replenishment-limit" className="mt-1" type="number" min="0" step="1" value={limit} onChange={e => setLimit(e.target.value)} /></label>
+        <label className="text-xs font-semibold text-muted-foreground">PROMISED DAYS<Input data-testid="input-replenishment-days" className="mt-1" type="number" min="0" step="1" value={days} onChange={e => setDays(e.target.value)} /></label>
+      </div>
+      <p className="text-xs text-muted-foreground">A zero limit does not permit replenishment orders. These bounds are per variant.</p>
+    </div>
+    <Button data-testid="button-save-availability-policy" size="sm" variant="outline" disabled={!valid || !changed || savePolicy.isPending || (enabled && !hasBom)} onClick={submit}>{savePolicy.isPending ? "Saving…" : "Save availability policy"}</Button>
+  </div>;
+}
 
 export default function ProductBom() {
   const { id } = useParams<{ id: string }>();
@@ -73,14 +106,15 @@ export default function ProductBom() {
   };
   return <Layout><div className="space-y-6">
     <div className="flex items-center gap-3"><Link data-testid="link-back-product" href={`/products/${id}`} className="rounded-lg p-2 hover:bg-muted"><ArrowLeft className="h-5 w-5" /></Link><div><p className="text-xs uppercase tracking-widest font-semibold text-primary">Products / production definition</p><h1 className="text-3xl font-bold mt-1">Bill of materials</h1><p className="text-sm text-muted-foreground mt-1">Define physical inputs and production work for one existing variant at a time.</p></div></div>
-    <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex gap-3 text-sm text-amber-950"><AlertTriangle className="h-5 w-5 shrink-0" /><p><strong>Phase 1 planning only.</strong> BOMs do not yet drive website availability or checkout. Legacy product stock stays as-is until explicitly reconciled; count blanks manually before opening component balances.</p></div>
+    <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex gap-3 text-sm text-amber-950"><AlertTriangle className="h-5 w-5 shrink-0" /><p><strong>Explicit opt-in.</strong> A BOM alone does not switch availability. Count and open physical component balances, then enable the variant below. Legacy product stock is never transferred automatically.</p></div>
     <div className="rounded-xl border bg-card p-5 space-y-3">
       <div className="flex flex-wrap items-end justify-between gap-4"><label className="text-xs font-semibold text-muted-foreground w-full sm:w-[360px]">PRODUCT VARIANT
         {variants.isLoading ? <div className="h-10 bg-muted animate-pulse rounded mt-2" /> : variants.isError ? <div className="text-destructive mt-2">Variants unavailable. <button className="underline" onClick={() => variants.refetch()}>Retry</button></div> : <select data-testid="select-bom-variant" className={`${inputClass} mt-2`} value={variantId ?? ""} onChange={e => switchVariant(Number(e.target.value))}><option value="" disabled>Choose a variant</option>{variants.data?.map(v => <option key={v.id} value={v.id}>{[v.sku, v.colour, v.sleeve, v.size].filter(Boolean).join(" / ") || `Variant #${v.id}`}</option>)}</select>}
       </label>{variantId && !showEditor && <Button data-testid="button-new-bom-version" onClick={start}><Plus className="mr-2 h-4 w-4" />{current ? "Create new version" : "Author first BOM"}</Button>}</div>
       {variants.data?.length === 0 && <p className="text-sm text-muted-foreground">This product has no variants yet. Add a variant on the product page before authoring a BOM.</p>}
       {selected && <p className="text-xs text-muted-foreground">Variant ID {selected.id}. Each saved version is immutable; edits create a new version.</p>}
-      {selected && <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+       {selected && <VariantAvailabilitySettings key={selected.id} variant={selected} productId={productId} hasBom={!!current} />}
+       {selected && <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
         <div><h2 className="text-sm font-semibold">Legacy quantity classification</h2><p className="mt-1 text-xs text-muted-foreground">Label this variant's existing quantity ({selected.stockQuantity ?? "unknown"} units) for migration review only. Classification does not transfer units to component inventory, change its balance, or affect checkout.</p></div>
         <div className="flex flex-col sm:flex-row sm:items-end gap-3">
           <label className="text-xs font-semibold text-muted-foreground flex-1">CLASSIFICATION

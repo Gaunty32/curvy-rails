@@ -45,7 +45,7 @@ vi.mock("../src/services/email.js", () => ({
 const testDatabaseUrl = process.env.FRESH_DATABASE_GUARD_TEST_DATABASE_URL;
 const migrationsDirectory = new URL("../../../lib/db/drizzle/", import.meta.url);
 const migrationFiles = readdirSync(migrationsDirectory)
-  .filter((file) => /^000[0-5]_.*\.sql$/.test(file))
+  .filter((file) => /^000[0-8]_.*\.sql$/.test(file))
   .sort();
 const require = createRequire(import.meta.url);
 const { Pool } = require("../../../lib/db/node_modules/pg") as {
@@ -111,6 +111,9 @@ if (!testDatabaseUrl) {
         "0003_reviewed_route_columns.sql",
         "0004_reviewed_first_run_route_columns.sql",
         "0005_checkout_intent_snapshots.sql",
+        "0006_manufacturing_phase1.sql",
+        "0007_manufacturing_stocktake_revision.sql",
+        "0008_manufacturing_availability_reservations.sql",
       ]);
       const client = await pool.connect();
       try {
@@ -155,6 +158,65 @@ if (!testDatabaseUrl) {
            RETURNING id`,
         );
         const productId = Number(productResult.rows[0].id);
+        const componentProductResult = await seedPool.query(
+          `INSERT INTO products
+            (name, sku, category, unit_price, image_url, website_published, is_archived, is_service, is_bespoke, vat_rate)
+           VALUES ('Synthetic Component Hoodie', 'CLEAN-HOODIE', 'Test Clothing', 25, 'https://images.invalid/clean-template-hoodie.png',
+             true, false, false, false, 0.2)
+           RETURNING id`,
+        );
+        const componentProductId = Number(componentProductResult.rows[0].id);
+        const variantResult = await seedPool.query(
+          `INSERT INTO product_variants (product_id, colour, size, sku, manufacturing_enabled)
+           VALUES ($1, 'Black', 'M', 'CLEAN-HOODIE-BLACK-M', true)
+           RETURNING id`,
+          [componentProductId],
+        );
+        const componentVariantId = Number(variantResult.rows[0].id);
+        await seedPool.query(
+          `INSERT INTO product_variants (product_id, colour, size, sku)
+           VALUES ($1, 'White', 'M', 'CLEAN-HOODIE-WHITE-M')`,
+          [componentProductId],
+        );
+        const componentResult = await seedPool.query(
+          `INSERT INTO manufacturing_components (sku, name, type, physical_balance)
+           VALUES ('CLEAN-BLANK-M', 'Synthetic Hoodie Blank M', 'garment', 20)
+           RETURNING id`,
+        );
+        const manufacturingComponentId = Number(componentResult.rows[0].id);
+        const bomResult = await seedPool.query(
+          `INSERT INTO manufacturing_boms (variant_id, version, is_current, created_by)
+           VALUES ($1, 1, true, 'offline test')
+           RETURNING id`,
+          [componentVariantId],
+        );
+        await seedPool.query(
+          `INSERT INTO manufacturing_bom_components
+            (bom_id, component_id, quantity, component_sku_snapshot, component_name_snapshot, unit_cost_gbp_snapshot)
+           VALUES ($1, $2, 1, 'CLEAN-BLANK-M', 'Synthetic Hoodie Blank M', 5)`,
+          [Number(bomResult.rows[0].id), manufacturingComponentId],
+        );
+        const bundleWooId = 987654;
+        const bundleProductResult = await seedPool.query(
+          `INSERT INTO products
+            (name, sku, category, unit_price, image_url, website_published, is_archived, is_service, is_bespoke, vat_rate, woo_commerce_id)
+           VALUES ('Synthetic Managed Bundle', 'CLEAN-MANAGED-BUNDLE', 'Test Clothing', 25, 'https://images.invalid/clean-template-bundle.png',
+             true, false, false, false, 0.2, $1)
+           RETURNING id`,
+          [bundleWooId],
+        );
+        const bundleProductId = Number(bundleProductResult.rows[0].id);
+        const bundleDefinitionResult = await seedPool.query(
+          `INSERT INTO bundles (name, sku, price, is_active, woo_id)
+           VALUES ('Synthetic Managed Bundle', 'CLEAN-MANAGED-BUNDLE', 25, true, $1)
+           RETURNING id`,
+          [bundleWooId],
+        );
+        await seedPool.query(
+          `INSERT INTO bundle_components (bundle_id, product_id, product_name, quantity)
+           VALUES ($1, $2, 'Synthetic Component Hoodie', 1)`,
+          [Number(bundleDefinitionResult.rows[0].id), componentProductId],
+        );
         expect(Number(customerResult.rows[0].id)).toBeGreaterThan(0);
 
         const previousDatabaseUrl = process.env.DATABASE_URL;
@@ -208,6 +270,33 @@ if (!testDatabaseUrl) {
             price: 999,
             brandingPositions: [],
           }];
+          const componentCart = [{
+            wcProductId: componentProductId,
+            variationId: componentVariantId,
+            name: "Browser hoodie display name",
+            colour: "Black",
+            size: "M",
+            sku: "UNTRUSTED-HOODIE-SKU",
+            quantity: 2,
+            price: 999,
+            brandingPositions: [],
+          }];
+          const componentBundleCart = [{
+            wcProductId: bundleProductId,
+            name: "Synthetic Managed Bundle",
+            quantity: 1,
+            price: 999,
+            brandingPositions: [],
+            bundleComponents: [{
+              productId: componentProductId,
+              name: "Synthetic Component Hoodie",
+              qty: 1,
+              variationId: componentVariantId,
+              colour: "Black",
+              size: "M",
+              brandingPositions: [],
+            }],
+          }];
           const requestPaymentIntent = async (body: Record<string, unknown>) => {
             const response = await fetch(`${baseUrl}/shop/stripe/payment-intent`, {
               method: "POST",
@@ -216,9 +305,28 @@ if (!testDatabaseUrl) {
             });
             return { response, body: await response.json() as Record<string, any> };
           };
+          const productResponse = await fetch(`${baseUrl}/shop/wc/products/${componentProductId}`);
+          const productPayload = await productResponse.json() as Record<string, any>;
+          expect(productResponse.status).toBe(200);
+          expect(productPayload.variations.find((variation: any) => variation.id === componentVariantId)?.manufacturingEnabled).toBe(true);
+          expect(productPayload.variations.find((variation: any) => variation.attributes.some((attribute: any) => attribute.option === "White"))?.manufacturingEnabled).toBe(false);
           const rightTotal = 70.2;
 
           expect(process.env.STRIPE_SECRET_KEY).toBe("sk_test_clean_template_synthetic");
+          const unsupportedBundle = await requestPaymentIntent({
+            amount: 40.2,
+            cartItems: componentBundleCart,
+            shippingMethod: "courier",
+            postcode: "SW1A 1AA",
+          });
+          expect(unsupportedBundle.response.status).toBe(409);
+          expect(unsupportedBundle.body.error).toBe("Component-managed bundle checkout is not yet supported.");
+          expect(stripeState.creates).toHaveLength(0);
+          const bundleSnapshots = await seedPool.query(
+            "SELECT payment_intent_id FROM shop_checkout_intents",
+          );
+          expect(bundleSnapshots.rows).toHaveLength(0);
+
           const underpaid = await requestPaymentIntent({
             amount: rightTotal - 1,
             cartItems: originalCart,
@@ -295,11 +403,11 @@ if (!testDatabaseUrl) {
             total: rightTotal,
             shippingMethod: "courier",
           };
-          const submitOrder = async () => {
+          const submitOrder = async (body: Record<string, unknown> = orderBody) => {
             const response = await fetch(`${baseUrl}/shop/orders`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(orderBody),
+              body: JSON.stringify(body),
             });
             return { response, body: await response.json() as Record<string, any> };
           };
@@ -340,8 +448,181 @@ if (!testDatabaseUrl) {
             status: "finalized",
             order_id: firstOrder.body.orderId,
           });
-          expect(stripeState.creates).toHaveLength(1);
-          expect(stripeState.retrieves).toEqual([paymentIntentId, paymentIntentId]);
+          // A product without an explicitly enabled BOM variant preserves the
+          // legacy path and never creates component holds or allocations.
+          const legacyHolds = await seedPool.query(
+            "SELECT id FROM manufacturing_checkout_holds WHERE payment_intent_id = $1",
+            [paymentIntentId],
+          );
+          const legacyAllocations = await seedPool.query(
+            "SELECT id FROM manufacturing_confirmed_allocations WHERE payment_intent_id = $1",
+            [paymentIntentId],
+          );
+          expect(legacyHolds.rows).toHaveLength(0);
+          expect(legacyAllocations.rows).toHaveLength(0);
+          const statusIntentId = "pi_cleantemplatestatus";
+          stripeState.intents.set(statusIntentId, {
+            id: statusIntentId,
+            metadata: { source: "shop" },
+            status: "requires_payment_method",
+          });
+          const retryableStatus = await fetch(`${baseUrl}/shop/stripe/payment-intent/${statusIntentId}/status`);
+          expect((await retryableStatus.json()).status).toBe("requires_payment_method");
+          stripeState.intents.get(statusIntentId)!.status = "canceled";
+          const canceledStatus = await fetch(`${baseUrl}/shop/stripe/payment-intent/${statusIntentId}/status`);
+          expect((await canceledStatus.json()).status).toBe("canceled");
+
+          const componentIntentResponse = await requestPaymentIntent({
+            amount: rightTotal,
+            cartItems: componentCart,
+            shippingMethod: "courier",
+            postcode: "SW1A 1AA",
+          });
+          expect(componentIntentResponse.response.status, JSON.stringify(componentIntentResponse.body)).toBe(200);
+          const componentPaymentIntentId = componentIntentResponse.body.paymentIntentId as string;
+          const pendingHolds = await seedPool.query(
+            `SELECT line_index, variant_id, required_quantity, held_quantity, shortfall_quantity, status
+             FROM manufacturing_checkout_holds WHERE payment_intent_id = $1`,
+            [componentPaymentIntentId],
+          );
+          expect(pendingHolds.rows).toHaveLength(1);
+          expect(pendingHolds.rows[0]).toMatchObject({
+            line_index: 0,
+            variant_id: componentVariantId,
+            required_quantity: 2,
+            held_quantity: 2,
+            shortfall_quantity: 0,
+            status: "ACTIVE",
+          });
+
+          stripeState.intents.get(componentPaymentIntentId)!.status = "succeeded";
+          const componentOrderBody = {
+            ...orderBody,
+            paymentIntentId: componentPaymentIntentId,
+            cartItems: componentCart,
+          };
+          const componentOrder = await submitOrder(componentOrderBody);
+          expect(componentOrder.response.status, JSON.stringify(componentOrder.body)).toBe(200);
+          const componentOrderRetry = await submitOrder(componentOrderBody);
+          expect(componentOrderRetry.response.status).toBe(200);
+          expect(componentOrderRetry.body.orderId).toBe(componentOrder.body.orderId);
+
+          const confirmedHold = await seedPool.query(
+            "SELECT status FROM manufacturing_checkout_holds WHERE payment_intent_id = $1",
+            [componentPaymentIntentId],
+          );
+          const allocations = await seedPool.query(
+            `SELECT order_id, order_item_id, line_index, variant_id, component_id,
+                    required_quantity, allocated_quantity, shortfall_quantity, status
+             FROM manufacturing_confirmed_allocations WHERE payment_intent_id = $1`,
+            [componentPaymentIntentId],
+          );
+          const componentStock = await seedPool.query(
+            "SELECT physical_balance FROM manufacturing_components WHERE id = $1",
+            [manufacturingComponentId],
+          );
+          const finalOrderCount = await seedPool.query(
+            "SELECT count(*)::int AS count FROM orders WHERE source = 'shop'",
+          );
+          expect(confirmedHold.rows).toEqual([{ status: "CONVERTED" }]);
+          expect(allocations.rows).toHaveLength(1);
+          expect(allocations.rows[0]).toMatchObject({
+            order_id: componentOrder.body.orderId,
+            line_index: 0,
+            variant_id: componentVariantId,
+            component_id: manufacturingComponentId,
+            required_quantity: 2,
+            allocated_quantity: 2,
+            shortfall_quantity: 0,
+            status: "CONFIRMED",
+          });
+          const allocatedOrderLine = await seedPool.query(
+            "SELECT id FROM order_items WHERE order_id = $1 AND product_name = $2",
+            [componentOrder.body.orderId, "Synthetic Component Hoodie"],
+          );
+          expect(Number(allocations.rows[0].order_item_id)).toBe(Number(allocatedOrderLine.rows[0].id));
+          expect(componentStock.rows[0].physical_balance).toBe(20);
+          expect(finalOrderCount.rows[0].count).toBe(2);
+
+          const expiredIntentResponse = await requestPaymentIntent({
+            amount: rightTotal,
+            cartItems: componentCart,
+            shippingMethod: "courier",
+            postcode: "SW1A 1AA",
+          });
+          expect(expiredIntentResponse.response.status).toBe(200);
+          const expiredPaymentIntentId = expiredIntentResponse.body.paymentIntentId as string;
+          await seedPool.query(
+            `UPDATE manufacturing_checkout_holds
+             SET expires_at = now() - interval '1 minute'
+             WHERE payment_intent_id = $1`,
+            [expiredPaymentIntentId],
+          );
+          // Leave only the two units already allocated by the first paid order;
+          // the expired paid checkout therefore cannot reclaim component stock.
+          await seedPool.query(
+            "UPDATE manufacturing_components SET physical_balance = 2 WHERE id = $1",
+            [manufacturingComponentId],
+          );
+          stripeState.intents.get(expiredPaymentIntentId)!.status = "succeeded";
+          const expiredOrderBody = {
+            ...componentOrderBody,
+            paymentIntentId: expiredPaymentIntentId,
+          };
+          const expiredOrder = await submitOrder(expiredOrderBody);
+          expect(expiredOrder.response.status, JSON.stringify(expiredOrder.body)).toBe(200);
+          expect(expiredOrder.body.requiresStaffReview).toBe(true);
+          expect(expiredOrder.body.fulfillmentStatus).toBe("component_review_required");
+          expect(expiredOrder.body.ready).toBe(false);
+          expect(expiredOrder.body.allocationShortfalls).toMatchObject([{
+            component: "Synthetic Hoodie Blank M",
+            required: 2,
+            allocated: 0,
+            shortfall: 2,
+          }]);
+          const expiredOrderRetry = await submitOrder(expiredOrderBody);
+          expect(expiredOrderRetry.response.status).toBe(200);
+          expect(expiredOrderRetry.body.orderId).toBe(expiredOrder.body.orderId);
+          expect(expiredOrderRetry.body.requiresStaffReview).toBe(true);
+          expect(expiredOrderRetry.body.ready).toBe(false);
+
+          const expiredAllocationRows = await seedPool.query(
+            `SELECT required_quantity, allocated_quantity, shortfall_quantity
+             FROM manufacturing_confirmed_allocations WHERE payment_intent_id = $1`,
+            [expiredPaymentIntentId],
+          );
+          const reviewOrder = await seedPool.query(
+            "SELECT notes, portal_notes FROM orders WHERE id = $1",
+            [expiredOrder.body.orderId],
+          );
+          const reviewLogCount = await seedPool.query(
+            `SELECT count(*)::int AS count FROM order_logs
+             WHERE order_id = $1 AND action = 'Paid order requires component review'`,
+            [expiredOrder.body.orderId],
+          );
+          const orderCountAfterReview = await seedPool.query(
+            "SELECT count(*)::int AS count FROM orders WHERE source = 'shop'",
+          );
+          expect(expiredAllocationRows.rows).toEqual([{
+            required_quantity: 2,
+            allocated_quantity: 0,
+            shortfall_quantity: 2,
+          }]);
+          expect(reviewOrder.rows[0].notes).toMatch(/COMPONENT REVIEW REQUIRED/);
+          expect(reviewOrder.rows[0].portal_notes).toMatch(/COMPONENT REVIEW REQUIRED/);
+          expect(reviewLogCount.rows[0].count).toBe(1);
+          expect(orderCountAfterReview.rows[0].count).toBe(3);
+          expect(stripeState.creates).toHaveLength(3);
+          expect(stripeState.retrieves).toEqual([
+            paymentIntentId,
+            paymentIntentId,
+            statusIntentId,
+            statusIntentId,
+            componentPaymentIntentId,
+            componentPaymentIntentId,
+            expiredPaymentIntentId,
+            expiredPaymentIntentId,
+          ]);
           expect(actualFetchHosts.every((host) => host === "127.0.0.1")).toBe(true);
         } finally {
           if (server?.listening) {

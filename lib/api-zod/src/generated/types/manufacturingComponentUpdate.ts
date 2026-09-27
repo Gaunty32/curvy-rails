@@ -37,4 +37,5 @@ export interface ManufacturingComponentUpdate {
      */
   leadDays?: number | null;
   active?: boolean;
+  replenishable?: boolean;
 }

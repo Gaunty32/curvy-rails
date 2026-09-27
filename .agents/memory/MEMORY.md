@@ -1,1 +1,2 @@
 - [Inventory reconciliation safety](inventory-reconciliation.md) — stale stocktakes need movement-history checks, even when the current balance matches the draft.
+- [Paid holds after expiry](paid-hold-expiry.md) — preserve the paid order for explicit staff review if its component hold expires and stock is lost; never imply normal fulfillment.

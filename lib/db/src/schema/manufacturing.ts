@@ -5,6 +5,7 @@ import {
 import { sql } from "drizzle-orm";
 import { suppliersTable } from "./suppliers";
 import { productVariantsTable } from "./product-variants";
+import { ordersTable, orderItemsTable } from "./orders";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -21,6 +22,7 @@ export const manufacturingComponentsTable = pgTable("manufacturing_components", 
   targetLevel: integer("target_level").notNull().default(0),
   leadDays: integer("lead_days"),
   active: boolean("active").notNull().default(true),
+  replenishable: boolean("replenishable").notNull().default(false),
   physicalBalance: integer("physical_balance").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -112,6 +114,67 @@ export const manufacturingBomOperationsTable = pgTable("manufacturing_bom_operat
 }, (table) => [
   index("manufacturing_bom_operations_bom_idx").on(table.bomId),
   check("manufacturing_bom_operations_labour_check", sql`${table.labourAllowance} >= 0`),
+]);
+
+export const manufacturingAvailabilityPoliciesTable = pgTable("manufacturing_availability_policies", {
+  id: integer("id").primaryKey().default(1),
+  lowStockThreshold: integer("low_stock_threshold").notNull().default(3),
+  holdDurationMinutes: integer("hold_duration_minutes").notNull().default(20),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  check("manufacturing_availability_policy_id_check", sql`${table.id} = 1`),
+  check("manufacturing_availability_policy_values_check", sql`${table.lowStockThreshold} >= 0 AND ${table.holdDurationMinutes} BETWEEN 1 AND 1440`),
+]);
+
+export const manufacturingCheckoutHoldsTable = pgTable("manufacturing_checkout_holds", {
+  id: serial("id").primaryKey(),
+  paymentIntentId: text("payment_intent_id").notNull(),
+  lineIndex: integer("line_index").notNull(),
+  variantId: integer("variant_id").notNull().references(() => productVariantsTable.id, { onDelete: "restrict" }),
+  bomId: integer("bom_id").notNull().references(() => manufacturingBomsTable.id, { onDelete: "restrict" }),
+  componentId: integer("component_id").notNull().references(() => manufacturingComponentsTable.id, { onDelete: "restrict" }),
+  componentSkuSnapshot: text("component_sku_snapshot").notNull(),
+  componentNameSnapshot: text("component_name_snapshot").notNull(),
+  requiredQuantity: integer("required_quantity").notNull(),
+  heldQuantity: integer("held_quantity").notNull(),
+  shortfallQuantity: integer("shortfall_quantity").notNull().default(0),
+  checkoutReference: text("checkout_reference"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  status: text("status").notNull().default("ACTIVE"),
+}, (table) => [
+  uniqueIndex("manufacturing_checkout_holds_idempotency_uidx").on(table.paymentIntentId, table.lineIndex, table.variantId, table.bomId, table.componentId),
+  index("manufacturing_checkout_holds_active_component_idx").on(table.componentId, table.status, table.expiresAt),
+  index("manufacturing_checkout_holds_intent_idx").on(table.paymentIntentId),
+  check("manufacturing_checkout_holds_quantities_check", sql`${table.lineIndex} >= 0 AND ${table.requiredQuantity} > 0 AND ${table.heldQuantity} >= 0 AND ${table.shortfallQuantity} >= 0 AND ${table.heldQuantity} + ${table.shortfallQuantity} = ${table.requiredQuantity}`),
+  check("manufacturing_checkout_holds_status_check", sql`${table.status} IN ('ACTIVE', 'CONVERTED', 'RELEASED', 'EXPIRED')`),
+]);
+
+export const manufacturingAllocationsTable = pgTable("manufacturing_confirmed_allocations", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull().references(() => ordersTable.id, { onDelete: "restrict" }),
+  orderItemId: integer("order_item_id").notNull().references(() => orderItemsTable.id, { onDelete: "restrict" }),
+  paymentIntentId: text("payment_intent_id").notNull(),
+  lineIndex: integer("line_index").notNull(),
+  variantId: integer("variant_id").notNull().references(() => productVariantsTable.id, { onDelete: "restrict" }),
+  bomId: integer("bom_id").notNull().references(() => manufacturingBomsTable.id, { onDelete: "restrict" }),
+  componentId: integer("component_id").notNull().references(() => manufacturingComponentsTable.id, { onDelete: "restrict" }),
+  componentSkuSnapshot: text("component_sku_snapshot").notNull(),
+  componentNameSnapshot: text("component_name_snapshot").notNull(),
+  requiredQuantity: integer("required_quantity").notNull(),
+  allocatedQuantity: integer("allocated_quantity").notNull(),
+  shortfallQuantity: integer("shortfall_quantity").notNull().default(0),
+  manualReviewRequired: boolean("manual_review_required").notNull().default(false),
+  manualReviewReason: text("manual_review_reason"),
+  status: text("status").notNull().default("CONFIRMED"),
+  allocatedAt: timestamp("allocated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("manufacturing_allocations_order_item_component_uidx").on(table.orderId, table.orderItemId, table.componentId),
+  uniqueIndex("manufacturing_allocations_payment_line_component_uidx").on(table.paymentIntentId, table.lineIndex, table.componentId),
+  index("manufacturing_allocations_component_status_idx").on(table.componentId, table.status),
+  index("manufacturing_allocations_order_idx").on(table.orderId),
+  check("manufacturing_allocations_quantities_check", sql`${table.lineIndex} >= 0 AND ${table.requiredQuantity} > 0 AND ${table.allocatedQuantity} >= 0 AND ${table.shortfallQuantity} >= 0 AND ${table.allocatedQuantity} + ${table.shortfallQuantity} = ${table.requiredQuantity}`),
+  check("manufacturing_allocations_status_check", sql`${table.status} IN ('CONFIRMED', 'RELEASED')`),
 ]);
 
 export const insertManufacturingComponentSchema = createInsertSchema(manufacturingComponentsTable).omit({ id: true, createdAt: true, updatedAt: true });

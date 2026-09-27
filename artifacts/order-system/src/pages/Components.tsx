@@ -6,14 +6,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Boxes, Plus, Search, ArrowDownUp, ClipboardCheck, AlertTriangle } from "lucide-react";
+import { AvailabilityPanel } from "@/components/manufacturing/AvailabilityPanel";
+import { AvailabilityPolicyControl } from "@/components/manufacturing/AvailabilityPolicyControl";
 import { useComponents, useSuppliers, useMovements, useStocktakes, useCreateComponent, useUpdateComponent, useOpeningBalance, useCreateStocktake, useApproveStocktake, type Component, type Stocktake } from "@/hooks/use-manufacturing";
 
-type Form = { sku: string; name: string; type: string; supplierId: string; supplierSku: string; unitCost: string; binLocation: string; reorderLevel: string; targetStock: string; leadDays: string; isActive: boolean };
-const blank: Form = { sku: "", name: "", type: "garment", supplierId: "", supplierSku: "", unitCost: "", binLocation: "", reorderLevel: "0", targetStock: "0", leadDays: "0", isActive: true };
+type Form = { sku: string; name: string; type: string; supplierId: string; supplierSku: string; unitCost: string; binLocation: string; reorderLevel: string; targetStock: string; leadDays: string; isActive: boolean; replenishable: boolean };
+const blank: Form = { sku: "", name: "", type: "garment", supplierId: "", supplierSku: "", unitCost: "", binLocation: "", reorderLevel: "0", targetStock: "0", leadDays: "0", isActive: true, replenishable: false };
 const fromComponent = (c: Component): Form => ({
   sku: c.sku, name: c.name, type: c.type, supplierId: c.supplierId == null ? "" : String(c.supplierId),
   supplierSku: c.supplierSku ?? "", unitCost: c.unitCost == null ? "" : String(c.unitCost), binLocation: c.binLocation ?? "",
-  reorderLevel: String(c.reorderLevel ?? 0), targetStock: String(c.targetStock ?? 0), leadDays: String(c.leadDays ?? 0), isActive: c.isActive,
+  reorderLevel: String(c.reorderLevel ?? 0), targetStock: String(c.targetStock ?? 0), leadDays: String(c.leadDays ?? 0), isActive: c.isActive, replenishable: c.replenishable,
 });
 const field = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring";
 const label = "space-y-1 text-xs font-semibold text-muted-foreground";
@@ -22,7 +24,10 @@ export default function Components() {
   const { toast } = useToast();
   const components = useComponents();
   const suppliers = useSuppliers();
-  const [selected, setSelected] = useState<number | null>(null);
+   const [selected, setSelected] = useState<number | null>(() => {
+     const value = Number(new URLSearchParams(window.location.search).get("componentId"));
+     return Number.isInteger(value) && value > 0 ? value : null;
+   });
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Form>(blank);
   const [search, setSearch] = useState("");
@@ -53,7 +58,7 @@ export default function Components() {
       sku: form.sku.trim(), name: form.name.trim(), type: form.type.trim(),
       supplierId: form.supplierId ? Number(form.supplierId) : null, supplierSku: form.supplierSku.trim() || null,
       unitCost: form.unitCost ? Number(form.unitCost) : 0, binLocation: form.binLocation.trim() || null,
-      reorderLevel: Number(form.reorderLevel), targetStock: Number(form.targetStock), leadDays: Number(form.leadDays), isActive: form.isActive,
+      reorderLevel: Number(form.reorderLevel), targetStock: Number(form.targetStock), leadDays: Number(form.leadDays), isActive: form.isActive, replenishable: form.replenishable,
     };
     try {
       if (selected !== null) await update.mutateAsync({ id: selected, ...data });
@@ -88,6 +93,7 @@ export default function Components() {
       <Button data-testid="button-new-component" onClick={() => { if (selected !== null) setUnsavedCounts(previous => ({ ...previous, [selected]: { quantity, note } })); setSelected(null); setForm(blank); setEditing(true); setMode("details"); setQuantity(""); setNote(""); }}><Plus className="mr-2 h-4 w-4" /> New component</Button>
     </div>
     <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 flex gap-3"><AlertTriangle className="h-5 w-5 shrink-0" /><p><strong>Count before opening.</strong> Legacy product stock stays untouched. A component balance is not inherited from old variant stock; record a manually counted opening balance when you are ready.</p></div>
+    <AvailabilityPolicyControl />
     <div className="grid gap-5 lg:grid-cols-[minmax(300px,1fr)_minmax(350px,1.2fr)]">
       <section className="rounded-xl border bg-card overflow-hidden">
         <div className="border-b p-4 flex items-center justify-between gap-3"><h2 className="font-semibold">Physical catalogue <span className="text-muted-foreground font-normal">({components.data?.length ?? 0})</span></h2><div className="relative"><Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" /><Input data-testid="input-search-components" className="pl-8 h-9 w-40 sm:w-52" placeholder="SKU, name, bin" value={search} onChange={e => setSearch(e.target.value)} /></div></div>
@@ -110,10 +116,12 @@ export default function Components() {
             {([["unitCost","Unit cost (£)","0.01"],["reorderLevel","Reorder level","1"],["targetStock","Target stock","1"],["leadDays","Lead days","1"]] as const).map(([key,title,step]) => <label key={key} className={label}>{title}<Input data-testid={`input-component-${key}`} type="number" min="0" step={step} value={form[key]} onChange={e => change(key,e.target.value)} /></label>)}
           </div>
           <label className="flex items-center gap-2 text-sm"><input data-testid="checkbox-component-active" type="checkbox" checked={form.isActive} onChange={e => change("isActive",e.target.checked)} />Active component</label>
+           <label className="flex items-start gap-2 text-sm"><input data-testid="checkbox-component-replenishable" type="checkbox" className="mt-1" checked={form.replenishable} onChange={e => change("replenishable",e.target.checked)} /><span><strong>Eligible for order-to-replenish</strong><span className="block text-xs text-muted-foreground">Only enable if this component can reliably be replenished within its stated lead time. This does not create a purchase order.</span></span></label>
           <Button data-testid="button-save-component" disabled={create.isPending || update.isPending} type="submit">{create.isPending || update.isPending ? "Saving…" : "Save component"}</Button>
         </form> : active ? <div>
           <div className="p-5 border-b flex flex-wrap items-start justify-between gap-3"><div><p className="font-mono text-xs text-muted-foreground">{active.sku}</p><h2 className="text-xl font-bold mt-1">{active.name}</h2><div className="flex gap-2 mt-2"><Badge variant="secondary">{active.type}</Badge><Badge variant="outline">{active.isActive ? "Active" : "Inactive"}</Badge></div></div><Button data-testid="button-edit-component" variant="outline" size="sm" onClick={() => { setForm(fromComponent(active)); setEditing(true); }}>Edit details</Button></div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-5 border-b text-sm"><div><span className="text-xs text-muted-foreground block">Physical balance</span><strong className="text-lg tabular-nums">{movements.isLoading ? "Checking…" : movements.isError ? "Unavailable" : hasOpening ? active.physicalQty : "Not reconciled"}</strong></div><div><span className="text-xs text-muted-foreground block">Reorder / target</span><strong>{active.reorderLevel} / {active.targetStock}</strong></div><div><span className="text-xs text-muted-foreground block">Bin</span><strong>{active.binLocation || "—"}</strong></div><div><span className="text-xs text-muted-foreground block">Lead time</span><strong>{active.leadDays} days</strong></div></div>
+           <AvailabilityPanel key={active.id} componentId={active.id} />
+           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-5 border-b text-sm"><div><span className="text-xs text-muted-foreground block">Physical balance</span><strong className="text-lg tabular-nums">{movements.isLoading ? "Checking…" : movements.isError ? "Unavailable" : hasOpening ? active.physicalQty : "Not reconciled"}</strong></div><div><span className="text-xs text-muted-foreground block">Reorder / target</span><strong>{active.reorderLevel} / {active.targetStock}</strong></div><div><span className="text-xs text-muted-foreground block">Bin</span><strong>{active.binLocation || "—"}</strong></div><div><span className="text-xs text-muted-foreground block">Lead time</span><strong>{active.leadDays} days</strong></div></div>
           <div className="flex flex-wrap gap-2 px-5 pt-4"><Button data-testid="button-tab-history" size="sm" variant={mode === "history" ? "default" : "outline"} onClick={() => setMode("history")}><ArrowDownUp className="h-4 w-4 mr-1" /> Movements</Button><Button data-testid="button-tab-opening" size="sm" variant={mode === "opening" ? "default" : "outline"} disabled={movements.isLoading || movements.isError || !!hasOpening} onClick={() => setMode("opening")}>Opening balance</Button><Button data-testid="button-tab-stocktake" size="sm" variant={mode === "count" ? "default" : "outline"} disabled={movements.isLoading || movements.isError || !hasOpening} onClick={() => setMode("count")}><ClipboardCheck className="h-4 w-4 mr-1" /> Stocktake</Button></div>
           {mode === "details" && <p className="p-5 text-sm text-muted-foreground">{movements.isLoading ? "Checking reconciliation history…" : movements.isError ? <>Cannot verify reconciliation. <button className="underline text-destructive" onClick={() => movements.refetch()}>Retry</button></> : !hasOpening ? "Not reconciled yet. Count the physical stock and record it explicitly; existing product stock will remain unchanged." : "Review movement history or draft a stocktake to reconcile a new count."}</p>}
           {mode === "history" && <div className="p-5">{movements.isLoading ? <div className="h-32 animate-pulse bg-muted rounded" /> : movements.isError ? <p className="text-sm text-destructive">Movements unavailable. <button className="underline" onClick={() => movements.refetch()}>Retry</button></p> : movements.data?.length ? <div className="divide-y">{movements.data.map(m => <div key={m.id} className="py-3 grid grid-cols-[1fr_auto] gap-2 text-sm"><div><strong>{m.reason}</strong> <span className="text-muted-foreground">{m.reference || ""}</span><p className="text-xs text-muted-foreground">{m.actor} · {new Date(m.createdAt).toLocaleString("en-GB")}{m.note && ` · ${m.note}`}</p></div><div className="text-right tabular-nums"><strong className={m.delta < 0 ? "text-destructive" : "text-emerald-700"}>{m.delta > 0 ? "+" : ""}{m.delta}</strong><span className="block text-xs text-muted-foreground">Balance {m.balanceAfter}</span></div></div>)}</div> : <p className="text-sm text-muted-foreground">No movements recorded yet.</p>}</div>}

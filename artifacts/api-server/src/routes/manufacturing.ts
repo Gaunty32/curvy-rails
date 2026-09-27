@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
   CreateManufacturingComponentBody,
@@ -7,18 +7,27 @@ import {
   RecordManufacturingOpeningBalanceBody,
   CreateManufacturingStocktakeBody,
   CreateManufacturingVariantBomBody,
+  UpdateManufacturingVariantAvailabilityPolicyBody,
+  UpdateManufacturingAvailabilityPolicyBody,
 } from "@workspace/api-zod";
 import {
   db, manufacturingComponentsTable, manufacturingMovementsTable,
   manufacturingStocktakesTable, manufacturingBomsTable,
   manufacturingBomComponentsTable, manufacturingBomOperationsTable,
   productVariantsTable,
+  productsTable,
+  manufacturingCheckoutHoldsTable,
+  manufacturingAllocationsTable,
+  manufacturingAvailabilityPoliciesTable,
+  ordersTable,
 } from "@workspace/db";
 import { decodeStaffJwt, staffAuthorization } from "./staff-auth.js";
 import { createManufacturingService } from "../services/manufacturing.js";
+import { createManufacturingAvailabilityService } from "../services/manufacturing-availability.js";
 
 const router: IRouter = Router();
 const manufacturingService = createManufacturingService(db);
+const availabilityService = createManufacturingAvailabilityService(db);
 const idParam = z.object({ id: z.coerce.number().int().positive() });
 const variantParam = z.object({ variantId: z.coerce.number().int().positive() });
 const variantClassificationBody = z.object({
@@ -30,6 +39,14 @@ const bomInput = CreateManufacturingVariantBomBody.superRefine((value, context) 
   if (new Set(componentIds).size !== componentIds.length) {
     context.addIssue({ code: "custom", message: "Component lines must have distinct component IDs" });
   }
+});
+
+router.use("/manufacturing", async (req, res, next): Promise<void> => {
+  if (!(await staffAuthorization(req)).authenticated) {
+    res.status(401).json({ error: "Staff authentication required." });
+    return;
+  }
+  next();
 });
 
 function actorFor(req: Parameters<typeof decodeStaffJwt>[0]): string {
@@ -220,6 +237,92 @@ router.post("/manufacturing/variants/:variantId/boms", async (req, res): Promise
   } catch (error) {
     res.status((error as { status?: number })?.status ?? statusForError(error)).json({ error: errorMessage(error) });
   }
+});
+
+// Public, read-only component availability is deliberately scoped to published,
+// currently sellable variants. Disabled/legacy variants keep their old stock path.
+router.get("/shop/variants/:variantId/availability", async (req, res): Promise<void> => {
+  const params = variantParam.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
+  const [published] = await db.select({
+    id: productVariantsTable.id,
+    manufacturingEnabled: productVariantsTable.manufacturingEnabled,
+  }).from(productVariantsTable)
+    .innerJoin(productsTable, eq(productsTable.id, productVariantsTable.productId))
+    .where(and(
+      eq(productVariantsTable.id, params.data.variantId),
+      eq(productVariantsTable.isAvailable, true),
+      eq(productVariantsTable.manufacturingEnabled, true),
+      eq(productsTable.websitePublished, true),
+    ));
+  if (!published) { res.status(404).json({ error: "Published variant not found." }); return; }
+  try {
+    const availability = await availabilityService.availability(published.id);
+    res.json({ variantId: published.id, manufacturingEnabled: true, status: availability.status });
+  } catch (error) {
+    res.status((error as { status?: number }).status ?? 500).json({ error: errorMessage(error) });
+  }
+});
+
+router.get("/manufacturing/variants/:variantId/availability", async (req, res): Promise<void> => {
+  const params = variantParam.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
+  try { res.json(await availabilityService.availability(params.data.variantId)); }
+  catch (error) { res.status((error as { status?: number }).status ?? 500).json({ error: errorMessage(error) }); }
+});
+
+router.patch("/manufacturing/variants/:variantId/availability-policy", async (req, res): Promise<void> => {
+  const params = variantParam.safeParse(req.params);
+  const parsed = UpdateManufacturingVariantAvailabilityPolicyBody.safeParse(req.body);
+  if (!params.success || !parsed.success) {
+    const error = !params.success ? params.error.message : !parsed.success ? parsed.error.message : "Invalid request.";
+    res.status(400).json({ error }); return;
+  }
+  try {
+    const updated = await availabilityService.configureVariantAvailabilityPolicy(params.data.variantId, parsed.data);
+    res.json(updated);
+  } catch (error) {
+    res.status((error as { status?: number }).status ?? 500).json({ error: errorMessage(error) });
+  }
+});
+
+router.get("/manufacturing/policy", async (req, res): Promise<void> => {
+  const [policy] = await db.select().from(manufacturingAvailabilityPoliciesTable)
+    .where(eq(manufacturingAvailabilityPoliciesTable.id, 1));
+  res.json(policy ?? { id: 1, lowStockThreshold: 3, holdDurationMinutes: 20 });
+});
+
+router.patch("/manufacturing/policy", async (req, res): Promise<void> => {
+  const parsed = UpdateManufacturingAvailabilityPolicyBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  res.json(await availabilityService.updateAvailabilityPolicy(parsed.data));
+});
+
+router.get("/manufacturing/components/:id/balances", async (req, res): Promise<void> => {
+  const params = idParam.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
+  try {
+    const [balance, holds, allocations] = await Promise.all([
+      availabilityService.componentBalances(params.data.id),
+      db.select().from(manufacturingCheckoutHoldsTable)
+        .where(and(eq(manufacturingCheckoutHoldsTable.componentId, params.data.id),
+          eq(manufacturingCheckoutHoldsTable.status, "ACTIVE"),
+          sql`${manufacturingCheckoutHoldsTable.expiresAt} > now()`)),
+      db.select().from(manufacturingAllocationsTable)
+        .where(and(eq(manufacturingAllocationsTable.componentId, params.data.id),
+          eq(manufacturingAllocationsTable.status, "CONFIRMED"))),
+    ]);
+    res.json({ ...balance, holds, allocations });
+  } catch (error) { res.status((error as { status?: number }).status ?? 500).json({ error: errorMessage(error) }); }
+});
+
+router.get("/manufacturing/orders/:id/readiness", async (req, res): Promise<void> => {
+  const params = idParam.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
+  const [order] = await db.select({ id: ordersTable.id }).from(ordersTable)
+    .where(eq(ordersTable.id, params.data.id));
+  if (!order) { res.status(404).json({ error: "Order not found." }); return; }
+  res.json(await availabilityService.orderReadiness(params.data.id));
 });
 
 export default router;

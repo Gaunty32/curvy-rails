@@ -133,6 +133,20 @@ export async function inspectFreshDatabase(database: PoolLike | ReleasableClient
         // Identifiers are safely quoted; names came from information_schema.
         const quotedTable = `"${table.replace(/"/g, '""')}"`;
         if (table === "__drizzle_migrations" || table === "drizzle_migrations") continue;
+        if (table === "manufacturing_availability_policies") {
+          // Phase 2 installs one inert default policy row with its schema.
+          // Allow that exact schema seed, but still reject any customised or
+          // additional policy in an unmarked installation.
+          const policy = await client.query(
+            `SELECT COUNT(*)::integer AS total,
+                    COUNT(*) FILTER (WHERE id = 1 AND low_stock_threshold = 3
+                      AND hold_duration_minutes = 20)::integer AS defaults
+               FROM public.manufacturing_availability_policies`,
+          );
+          const { total, defaults } = policy.rows[0] as { total: number; defaults: number };
+          if (total <= 1 && total === defaults) continue;
+          throw new Error("Refusing to start: an unmarked database must be empty before first setup.");
+        }
         const populated = await client.query(
           `SELECT EXISTS (SELECT 1 FROM public.${quotedTable} LIMIT 1) AS populated`,
         );

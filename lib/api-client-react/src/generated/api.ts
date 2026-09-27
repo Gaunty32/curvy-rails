@@ -39,6 +39,7 @@ import type {
   CreateProductBody,
   CreateSupplierBody,
   Customer,
+  CustomerVariantAvailability,
   DashboardStats,
   ErrorResponse,
   HealthStatus,
@@ -48,18 +49,25 @@ import type {
   ListProductsParams,
   ListShopProductsParams,
   ListSuppliersParams,
+  ManufacturingAvailability,
+  ManufacturingAvailabilityPolicy,
+  ManufacturingAvailabilityPolicyInput,
   ManufacturingBom,
   ManufacturingBomInput,
   ManufacturingComponent,
+  ManufacturingComponentBalances,
   ManufacturingComponentInput,
   ManufacturingComponentUpdate,
   ManufacturingOpeningBalanceInput,
+  ManufacturingOrderReadiness,
   ManufacturingStockMovement,
   ManufacturingStocktake,
   ManufacturingStocktakeApproval,
   ManufacturingStocktakeInput,
+  ManufacturingVariantAvailabilityPolicyInput,
   ManufacturingVariantClassificationInput,
   ManufacturingVariantClassificationResult,
+  ManufacturingVariantPolicy,
   Order,
   OrderDetail,
   OrderItem,
@@ -1118,6 +1126,689 @@ export const useCreateManufacturingVariantBom = <TError = ErrorType<void>,
       > => {
       return useMutation(getCreateManufacturingVariantBomMutationOptions(options), queryClient);
     }
+
+export const getGetShopVariantAvailabilityUrl = (variantId: number,) => {
+
+
+
+
+  return `/api/shop/variants/${variantId}/availability`
+}
+
+/**
+ * @summary Read published variant component availability
+ */
+export const getShopVariantAvailability = async (variantId: number, options?: Parameters<typeof customFetch>[1]): Promise<CustomerVariantAvailability> => {
+
+  return customFetch<CustomerVariantAvailability>(getGetShopVariantAvailabilityUrl(variantId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetShopVariantAvailabilityQueryKey = (variantId: number,) => {
+    return [
+    `/api/shop/variants/${variantId}/availability`
+    ] as const;
+    }
+
+
+export const getGetShopVariantAvailabilityQueryOptions = <TData = Awaited<ReturnType<typeof getShopVariantAvailability>>, TError = ErrorType<void>>(variantId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getShopVariantAvailability>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetShopVariantAvailabilityQueryKey(variantId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getShopVariantAvailability>>> = ({ signal }) => getShopVariantAvailability(variantId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: variantId !== null && variantId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getShopVariantAvailability>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetShopVariantAvailabilityQueryResult = NonNullable<Awaited<ReturnType<typeof getShopVariantAvailability>>>
+export type GetShopVariantAvailabilityQueryError = ErrorType<void>
+
+
+export function useGetShopVariantAvailability<TData = Awaited<ReturnType<typeof getShopVariantAvailability>>, TError = ErrorType<void>>(
+ variantId: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getShopVariantAvailability>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getShopVariantAvailability>>,
+          TError,
+          Awaited<ReturnType<typeof getShopVariantAvailability>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetShopVariantAvailability<TData = Awaited<ReturnType<typeof getShopVariantAvailability>>, TError = ErrorType<void>>(
+ variantId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getShopVariantAvailability>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getShopVariantAvailability>>,
+          TError,
+          Awaited<ReturnType<typeof getShopVariantAvailability>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetShopVariantAvailability<TData = Awaited<ReturnType<typeof getShopVariantAvailability>>, TError = ErrorType<void>>(
+ variantId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getShopVariantAvailability>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Read published variant component availability
+ */
+
+export function useGetShopVariantAvailability<TData = Awaited<ReturnType<typeof getShopVariantAvailability>>, TError = ErrorType<void>>(
+ variantId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getShopVariantAvailability>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetShopVariantAvailabilityQueryOptions(variantId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetManufacturingVariantAvailabilityUrl = (variantId: number,) => {
+
+
+
+
+  return `/api/manufacturing/variants/${variantId}/availability`
+}
+
+/**
+ * @summary Read authoritative staff availability for a variant
+ */
+export const getManufacturingVariantAvailability = async (variantId: number, options?: Parameters<typeof customFetch>[1]): Promise<ManufacturingAvailability> => {
+
+  return customFetch<ManufacturingAvailability>(getGetManufacturingVariantAvailabilityUrl(variantId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetManufacturingVariantAvailabilityQueryKey = (variantId: number,) => {
+    return [
+    `/api/manufacturing/variants/${variantId}/availability`
+    ] as const;
+    }
+
+
+export const getGetManufacturingVariantAvailabilityQueryOptions = <TData = Awaited<ReturnType<typeof getManufacturingVariantAvailability>>, TError = ErrorType<void>>(variantId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getManufacturingVariantAvailability>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetManufacturingVariantAvailabilityQueryKey(variantId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getManufacturingVariantAvailability>>> = ({ signal }) => getManufacturingVariantAvailability(variantId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: variantId !== null && variantId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getManufacturingVariantAvailability>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetManufacturingVariantAvailabilityQueryResult = NonNullable<Awaited<ReturnType<typeof getManufacturingVariantAvailability>>>
+export type GetManufacturingVariantAvailabilityQueryError = ErrorType<void>
+
+
+export function useGetManufacturingVariantAvailability<TData = Awaited<ReturnType<typeof getManufacturingVariantAvailability>>, TError = ErrorType<void>>(
+ variantId: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getManufacturingVariantAvailability>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getManufacturingVariantAvailability>>,
+          TError,
+          Awaited<ReturnType<typeof getManufacturingVariantAvailability>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetManufacturingVariantAvailability<TData = Awaited<ReturnType<typeof getManufacturingVariantAvailability>>, TError = ErrorType<void>>(
+ variantId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getManufacturingVariantAvailability>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getManufacturingVariantAvailability>>,
+          TError,
+          Awaited<ReturnType<typeof getManufacturingVariantAvailability>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetManufacturingVariantAvailability<TData = Awaited<ReturnType<typeof getManufacturingVariantAvailability>>, TError = ErrorType<void>>(
+ variantId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getManufacturingVariantAvailability>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Read authoritative staff availability for a variant
+ */
+
+export function useGetManufacturingVariantAvailability<TData = Awaited<ReturnType<typeof getManufacturingVariantAvailability>>, TError = ErrorType<void>>(
+ variantId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getManufacturingVariantAvailability>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetManufacturingVariantAvailabilityQueryOptions(variantId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateManufacturingVariantAvailabilityPolicyUrl = (variantId: number,) => {
+
+
+
+
+  return `/api/manufacturing/variants/${variantId}/availability-policy`
+}
+
+/**
+ * Enabling requires an active current BOM and a recorded opening balance for every physical BOM component. Replenishment is disabled by default and requires component-level replenishable confirmation and lead days.
+ * @summary Configure explicit manufacturing eligibility and bounded replenishment
+ */
+export const updateManufacturingVariantAvailabilityPolicy = async (variantId: number,
+    manufacturingVariantAvailabilityPolicyInput: ManufacturingVariantAvailabilityPolicyInput, options?: Parameters<typeof customFetch>[1]): Promise<ManufacturingVariantPolicy> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ManufacturingVariantPolicy>(getUpdateManufacturingVariantAvailabilityPolicyUrl(variantId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(manufacturingVariantAvailabilityPolicyInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateManufacturingVariantAvailabilityPolicyMutationKey = () => ['updateManufacturingVariantAvailabilityPolicy'] as const;
+
+export const getUpdateManufacturingVariantAvailabilityPolicyMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateManufacturingVariantAvailabilityPolicy>>, TError,UpdateManufacturingVariantAvailabilityPolicyMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateManufacturingVariantAvailabilityPolicy>>, TError,UpdateManufacturingVariantAvailabilityPolicyMutationVariables, TContext> => {
+
+const mutationKey = getUpdateManufacturingVariantAvailabilityPolicyMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateManufacturingVariantAvailabilityPolicy>>, UpdateManufacturingVariantAvailabilityPolicyMutationVariables> = (props) => {
+          const {variantId,data} = props ?? {};
+
+          return  updateManufacturingVariantAvailabilityPolicy(variantId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateManufacturingVariantAvailabilityPolicyMutationResult = NonNullable<Awaited<ReturnType<typeof updateManufacturingVariantAvailabilityPolicy>>>
+    export type UpdateManufacturingVariantAvailabilityPolicyMutationBody = BodyType<ManufacturingVariantAvailabilityPolicyInput>
+    export type UpdateManufacturingVariantAvailabilityPolicyMutationError = ErrorType<void>
+    export type UpdateManufacturingVariantAvailabilityPolicyMutationVariables = {variantId: number;data: BodyType<ManufacturingVariantAvailabilityPolicyInput>}
+
+    /**
+ * @summary Configure explicit manufacturing eligibility and bounded replenishment
+ */
+export const useUpdateManufacturingVariantAvailabilityPolicy = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateManufacturingVariantAvailabilityPolicy>>, TError,UpdateManufacturingVariantAvailabilityPolicyMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateManufacturingVariantAvailabilityPolicy>>,
+        TError,
+        UpdateManufacturingVariantAvailabilityPolicyMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateManufacturingVariantAvailabilityPolicyMutationOptions(options), queryClient);
+    }
+
+export const getGetManufacturingAvailabilityPolicyUrl = () => {
+
+
+
+
+  return `/api/manufacturing/policy`
+}
+
+/**
+ * @summary Read shared low-stock threshold and checkout hold duration
+ */
+export const getManufacturingAvailabilityPolicy = async ( options?: Parameters<typeof customFetch>[1]): Promise<ManufacturingAvailabilityPolicy> => {
+
+  return customFetch<ManufacturingAvailabilityPolicy>(getGetManufacturingAvailabilityPolicyUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetManufacturingAvailabilityPolicyQueryKey = () => {
+    return [
+    `/api/manufacturing/policy`
+    ] as const;
+    }
+
+
+export const getGetManufacturingAvailabilityPolicyQueryOptions = <TData = Awaited<ReturnType<typeof getManufacturingAvailabilityPolicy>>, TError = ErrorType<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getManufacturingAvailabilityPolicy>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetManufacturingAvailabilityPolicyQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getManufacturingAvailabilityPolicy>>> = ({ signal }) => getManufacturingAvailabilityPolicy({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getManufacturingAvailabilityPolicy>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetManufacturingAvailabilityPolicyQueryResult = NonNullable<Awaited<ReturnType<typeof getManufacturingAvailabilityPolicy>>>
+export type GetManufacturingAvailabilityPolicyQueryError = ErrorType<void>
+
+
+export function useGetManufacturingAvailabilityPolicy<TData = Awaited<ReturnType<typeof getManufacturingAvailabilityPolicy>>, TError = ErrorType<void>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getManufacturingAvailabilityPolicy>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getManufacturingAvailabilityPolicy>>,
+          TError,
+          Awaited<ReturnType<typeof getManufacturingAvailabilityPolicy>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetManufacturingAvailabilityPolicy<TData = Awaited<ReturnType<typeof getManufacturingAvailabilityPolicy>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getManufacturingAvailabilityPolicy>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getManufacturingAvailabilityPolicy>>,
+          TError,
+          Awaited<ReturnType<typeof getManufacturingAvailabilityPolicy>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetManufacturingAvailabilityPolicy<TData = Awaited<ReturnType<typeof getManufacturingAvailabilityPolicy>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getManufacturingAvailabilityPolicy>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Read shared low-stock threshold and checkout hold duration
+ */
+
+export function useGetManufacturingAvailabilityPolicy<TData = Awaited<ReturnType<typeof getManufacturingAvailabilityPolicy>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getManufacturingAvailabilityPolicy>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetManufacturingAvailabilityPolicyQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateManufacturingAvailabilityPolicyUrl = () => {
+
+
+
+
+  return `/api/manufacturing/policy`
+}
+
+/**
+ * @summary Configure shared low-stock threshold and checkout hold duration
+ */
+export const updateManufacturingAvailabilityPolicy = async (manufacturingAvailabilityPolicyInput: ManufacturingAvailabilityPolicyInput, options?: Parameters<typeof customFetch>[1]): Promise<ManufacturingAvailabilityPolicy> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ManufacturingAvailabilityPolicy>(getUpdateManufacturingAvailabilityPolicyUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(manufacturingAvailabilityPolicyInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateManufacturingAvailabilityPolicyMutationKey = () => ['updateManufacturingAvailabilityPolicy'] as const;
+
+export const getUpdateManufacturingAvailabilityPolicyMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateManufacturingAvailabilityPolicy>>, TError,UpdateManufacturingAvailabilityPolicyMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateManufacturingAvailabilityPolicy>>, TError,UpdateManufacturingAvailabilityPolicyMutationVariables, TContext> => {
+
+const mutationKey = getUpdateManufacturingAvailabilityPolicyMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateManufacturingAvailabilityPolicy>>, UpdateManufacturingAvailabilityPolicyMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateManufacturingAvailabilityPolicy(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateManufacturingAvailabilityPolicyMutationResult = NonNullable<Awaited<ReturnType<typeof updateManufacturingAvailabilityPolicy>>>
+    export type UpdateManufacturingAvailabilityPolicyMutationBody = BodyType<ManufacturingAvailabilityPolicyInput>
+    export type UpdateManufacturingAvailabilityPolicyMutationError = ErrorType<void>
+    export type UpdateManufacturingAvailabilityPolicyMutationVariables = {data: BodyType<ManufacturingAvailabilityPolicyInput>}
+
+    /**
+ * @summary Configure shared low-stock threshold and checkout hold duration
+ */
+export const useUpdateManufacturingAvailabilityPolicy = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateManufacturingAvailabilityPolicy>>, TError,UpdateManufacturingAvailabilityPolicyMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateManufacturingAvailabilityPolicy>>,
+        TError,
+        UpdateManufacturingAvailabilityPolicyMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateManufacturingAvailabilityPolicyMutationOptions(options), queryClient);
+    }
+
+export const getGetManufacturingComponentBalancesUrl = (id: number,) => {
+
+
+
+
+  return `/api/manufacturing/components/${id}/balances`
+}
+
+/**
+ * @summary Inspect physical, held, allocated, and available component quantities
+ */
+export const getManufacturingComponentBalances = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<ManufacturingComponentBalances> => {
+
+  return customFetch<ManufacturingComponentBalances>(getGetManufacturingComponentBalancesUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetManufacturingComponentBalancesQueryKey = (id: number,) => {
+    return [
+    `/api/manufacturing/components/${id}/balances`
+    ] as const;
+    }
+
+
+export const getGetManufacturingComponentBalancesQueryOptions = <TData = Awaited<ReturnType<typeof getManufacturingComponentBalances>>, TError = ErrorType<void>>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getManufacturingComponentBalances>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetManufacturingComponentBalancesQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getManufacturingComponentBalances>>> = ({ signal }) => getManufacturingComponentBalances(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getManufacturingComponentBalances>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetManufacturingComponentBalancesQueryResult = NonNullable<Awaited<ReturnType<typeof getManufacturingComponentBalances>>>
+export type GetManufacturingComponentBalancesQueryError = ErrorType<void>
+
+
+export function useGetManufacturingComponentBalances<TData = Awaited<ReturnType<typeof getManufacturingComponentBalances>>, TError = ErrorType<void>>(
+ id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getManufacturingComponentBalances>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getManufacturingComponentBalances>>,
+          TError,
+          Awaited<ReturnType<typeof getManufacturingComponentBalances>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetManufacturingComponentBalances<TData = Awaited<ReturnType<typeof getManufacturingComponentBalances>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getManufacturingComponentBalances>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getManufacturingComponentBalances>>,
+          TError,
+          Awaited<ReturnType<typeof getManufacturingComponentBalances>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetManufacturingComponentBalances<TData = Awaited<ReturnType<typeof getManufacturingComponentBalances>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getManufacturingComponentBalances>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Inspect physical, held, allocated, and available component quantities
+ */
+
+export function useGetManufacturingComponentBalances<TData = Awaited<ReturnType<typeof getManufacturingComponentBalances>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getManufacturingComponentBalances>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetManufacturingComponentBalancesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetManufacturingOrderReadinessUrl = (id: number,) => {
+
+
+
+
+  return `/api/manufacturing/orders/${id}/readiness`
+}
+
+/**
+ * @summary Report component allocation readiness and shortfalls for an order
+ */
+export const getManufacturingOrderReadiness = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<ManufacturingOrderReadiness> => {
+
+  return customFetch<ManufacturingOrderReadiness>(getGetManufacturingOrderReadinessUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetManufacturingOrderReadinessQueryKey = (id: number,) => {
+    return [
+    `/api/manufacturing/orders/${id}/readiness`
+    ] as const;
+    }
+
+
+export const getGetManufacturingOrderReadinessQueryOptions = <TData = Awaited<ReturnType<typeof getManufacturingOrderReadiness>>, TError = ErrorType<void>>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getManufacturingOrderReadiness>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetManufacturingOrderReadinessQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getManufacturingOrderReadiness>>> = ({ signal }) => getManufacturingOrderReadiness(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getManufacturingOrderReadiness>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetManufacturingOrderReadinessQueryResult = NonNullable<Awaited<ReturnType<typeof getManufacturingOrderReadiness>>>
+export type GetManufacturingOrderReadinessQueryError = ErrorType<void>
+
+
+export function useGetManufacturingOrderReadiness<TData = Awaited<ReturnType<typeof getManufacturingOrderReadiness>>, TError = ErrorType<void>>(
+ id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getManufacturingOrderReadiness>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getManufacturingOrderReadiness>>,
+          TError,
+          Awaited<ReturnType<typeof getManufacturingOrderReadiness>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetManufacturingOrderReadiness<TData = Awaited<ReturnType<typeof getManufacturingOrderReadiness>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getManufacturingOrderReadiness>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getManufacturingOrderReadiness>>,
+          TError,
+          Awaited<ReturnType<typeof getManufacturingOrderReadiness>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetManufacturingOrderReadiness<TData = Awaited<ReturnType<typeof getManufacturingOrderReadiness>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getManufacturingOrderReadiness>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Report component allocation readiness and shortfalls for an order
+ */
+
+export function useGetManufacturingOrderReadiness<TData = Awaited<ReturnType<typeof getManufacturingOrderReadiness>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getManufacturingOrderReadiness>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetManufacturingOrderReadinessQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getHealthCheckUrl = () => {
 

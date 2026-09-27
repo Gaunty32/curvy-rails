@@ -55,6 +55,49 @@ export function useWcProduct(id: string | number | undefined) {
   });
 }
 
+/** Public manufacturing state only. Never surface component balances or quantities. */
+export type ShopVariantAvailabilityStatus =
+  | 'IN_STOCK'
+  | 'LOW_STOCK'
+  | 'AVAILABLE_TO_ORDER'
+  | 'OUT_OF_STOCK';
+
+export interface ShopVariantAvailability {
+  variantId: number;
+  manufacturingEnabled: true;
+  status: ShopVariantAvailabilityStatus;
+  leadDays?: number | null;
+}
+
+export function useShopVariantAvailability(variantId: number | undefined, enabled: boolean) {
+  return useQuery<ShopVariantAvailability>({
+    queryKey: ['shop-variant-availability', variantId],
+    queryFn: async ({ signal }) => {
+      if (variantId === undefined) throw new Error('Select a variant to check availability');
+      const res = await fetch(`${API}/shop/variants/${variantId}/availability`, { signal });
+      if (!res.ok) throw new Error('Availability could not be checked');
+      const data: unknown = await res.json();
+      if (!data || typeof data !== 'object') throw new Error('Invalid availability response');
+      const result = data as Record<string, unknown>;
+      if (
+        result.variantId !== variantId ||
+        result.manufacturingEnabled !== true ||
+        !['IN_STOCK', 'LOW_STOCK', 'AVAILABLE_TO_ORDER', 'OUT_OF_STOCK'].includes(String(result.status))
+      ) throw new Error('Invalid availability response');
+      return {
+        variantId,
+        manufacturingEnabled: true,
+        status: result.status as ShopVariantAvailabilityStatus,
+        leadDays: typeof result.leadDays === 'number' && Number.isFinite(result.leadDays) && result.leadDays > 0
+          ? result.leadDays : null,
+      };
+    },
+    enabled: enabled && variantId !== undefined,
+    staleTime: 30_000,
+    retry: 1,
+  });
+}
+
 export interface ShopImage {
   url: string;
   productName: string;

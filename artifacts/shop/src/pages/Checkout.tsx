@@ -384,6 +384,11 @@ function CheckoutForm() {
       });
 
       if (error) {
+        // Ask the server to verify the provider state. It releases a hold only
+        // when Stripe reports the intent as definitely canceled; a retryable
+        // requires_payment_method state retains the hold.
+        void fetch(`/api/shop/stripe/payment-intent/${encodeURIComponent(paymentIntentId)}/status`)
+          .catch(() => undefined);
         throw new Error(error.message);
       }
 

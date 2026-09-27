@@ -19,6 +19,8 @@ import { sendOrderConfirmationContentAlert } from "../services/orderConfirmation
 import { requireConfiguredBusinessIdentity } from "../lib/business-config.js";
 import { getUncachableStripeClient } from "../services/stripeClient.js";
 import { getManagerPackingCustomerIds, isManagerPackingEnabled } from "../lib/customer-dispatch-settings.js";
+import { createManufacturingAvailabilityService } from "../services/manufacturing-availability.js";
+import { staffAuthorization } from "./staff-auth.js";
 import {
   UpdateOrderBody,
   GetOrderParams,
@@ -46,6 +48,7 @@ const CreateOrderBodyFixed = z.object({
 });
 
 const router: IRouter = Router();
+const componentAvailability = createManufacturingAvailabilityService(db);
 
 function escapeHtml(value: unknown): string {
   return String(value ?? "").replace(/[&<>"']/g, character =>
@@ -796,6 +799,46 @@ router.patch("/orders/:id", async (req, res): Promise<void> => {
 
   const updateData: Record<string, unknown> = { ...parsed.data, updatedAt: new Date() };
 
+  // Cancellation is the one staff-order mutation that releases Phase 2
+  // allocations. Keep the historical authentication behavior for every other
+  // PATCH operation unchanged.
+  const isCancellationRequest = parsed.data.status === "cancelled";
+  if (isCancellationRequest && !(await staffAuthorization(req)).authenticated) {
+    res.status(401).json({ error: "Staff authentication required" });
+    return;
+  }
+
+  if (parsed.data.status === "draft") {
+    const componentAllocationHistory = await db.execute(sql`
+      SELECT 1
+      FROM manufacturing_confirmed_allocations
+      WHERE order_id = ${params.data.id}
+      LIMIT 1
+    `);
+    if (componentAllocationHistory.rows.length > 0) {
+      res.status(409).json({
+        error: "Orders with Phase 2 component allocation history cannot be reverted to draft. Cancel through the authenticated staff order route instead.",
+      });
+      return;
+    }
+  }
+
+  if (parsed.data.status === "confirmed") {
+    const manualReviewAllocation = await db.execute(sql`
+      SELECT 1
+      FROM manufacturing_confirmed_allocations
+      WHERE order_id = ${params.data.id}
+        AND manual_review_required = true
+      LIMIT 1
+    `);
+    if (manualReviewAllocation.rows.length > 0) {
+      res.status(409).json({
+        error: "This Phase 2 order requires manual review before it can be confirmed. Resolve the component allocation review first.",
+      });
+      return;
+    }
+  }
+
   if (parsed.data.customerId) {
     const [customer] = await db.select().from(customersTable).where(eq(customersTable.id, parsed.data.customerId));
     if (customer) {
@@ -823,11 +866,51 @@ router.patch("/orders/:id", async (req, res): Promise<void> => {
     updateData.invoiceAddressId = req.body.invoiceAddressId ?? null;
   }
 
-  const [order] = await db
-    .update(ordersTable)
-    .set(updateData)
-    .where(eq(ordersTable.id, params.data.id))
-    .returning();
+  let order: typeof ordersTable.$inferSelect | undefined;
+  if (isCancellationRequest) {
+    // Lock order rows before the availability service locks component rows.
+    // Payment/allocation flows must use the same order -> component lock order
+    // to avoid deadlocks. Status and allocation release commit or roll back
+    // together. The pre-update status check makes a repeated cancellation a
+    // no-op for allocations, while a later status reversal never recreates them.
+    order = await db.transaction(async (tx) => {
+      const lockedRows = await tx.execute(sql`
+        SELECT status
+        FROM orders
+        WHERE id = ${params.data.id}
+        FOR UPDATE
+      `);
+      const lockedOrder = lockedRows.rows[0] as { status: string } | undefined;
+      if (!lockedOrder) return undefined;
+
+      const [updatedOrder] = await tx
+        .update(ordersTable)
+        .set(updateData)
+        .where(eq(ordersTable.id, params.data.id))
+        .returning();
+      if (lockedOrder.status !== "cancelled") {
+        // Lock only components with live Phase 2 allocations, in ascending
+        // component-id order, before changing allocation status.
+        await tx.execute(sql`
+          SELECT c.id
+          FROM manufacturing_components c
+          JOIN manufacturing_confirmed_allocations a ON a.component_id = c.id
+          WHERE a.order_id = ${params.data.id}
+            AND a.status = 'CONFIRMED'
+          ORDER BY c.id
+          FOR UPDATE OF c
+        `);
+        await componentAvailability.releaseOrderAllocations(tx, params.data.id);
+      }
+      return updatedOrder;
+    });
+  } else {
+    [order] = await db
+      .update(ordersTable)
+      .set(updateData)
+      .where(eq(ordersTable.id, params.data.id))
+      .returning();
+  }
   if (!order) {
     res.status(404).json({ error: "Order not found" });
     return;
@@ -836,7 +919,7 @@ router.patch("/orders/:id", async (req, res): Promise<void> => {
   // ── Re-generate Stripe payment link when carriage changes ─────────────────
   // The link amount is (totalAmount + carriageAmount) × 1.2, so it goes stale
   // whenever shipping is added/changed after the link was first created.
-  if (req.body.carriageAmount !== undefined && order.stripePaymentLinkId) {
+  if (!isCancellationRequest && req.body.carriageAmount !== undefined && order.stripePaymentLinkId) {
     const business = await requireConfiguredBusinessIdentity();
     try {
       const stripe = await getUncachableStripeClient();
@@ -884,7 +967,15 @@ router.patch("/orders/:id", async (req, res): Promise<void> => {
       return;
     }
 
-    const items = await db
+    const phase2AllocationRows = await db.execute(sql`
+      SELECT DISTINCT order_item_id
+      FROM manufacturing_confirmed_allocations
+      WHERE order_id = ${params.data.id}
+    `);
+    const phase2ManagedItemIds = new Set(
+      (phase2AllocationRows.rows as Array<{ order_item_id: number }>).map(row => Number(row.order_item_id)),
+    );
+    const allOrderItems = await db
       .select({
         id: orderItemsTable.id,
         productId: orderItemsTable.productId,
@@ -899,6 +990,11 @@ router.patch("/orders/:id", async (req, res): Promise<void> => {
       })
       .from(orderItemsTable)
       .where(eq(orderItemsTable.orderId, params.data.id));
+    // Phase 2 allocations (including RELEASED rows after cancellation) are the
+    // authoritative stock handling for these lines. Keep them out of every
+    // legacy stock, shortfall, purchasing, and worksheet calculation; other
+    // legacy lines in the same order continue through the existing path.
+    const items = allOrderItems.filter(item => !phase2ManagedItemIds.has(item.id));
 
     const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as number[];
 
@@ -1627,84 +1723,95 @@ router.delete("/orders/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  // Fetch the order first so we know its status
-  const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, params.data.id));
-  if (!order) {
+  const result = await db.transaction(async (tx) => {
+    // Serialize deletion against status/payment updates and retain the
+    // allocation audit trail. Released allocations still identify a
+    // component-managed order whose legacy stock must not be restored here.
+    const lockedRows = await tx.execute(sql`
+      SELECT id FROM orders WHERE id = ${params.data.id} FOR UPDATE
+    `);
+    if (!lockedRows.rows.length) return "missing" as const;
+
+    const allocationRows = await tx.execute(sql`
+      SELECT id FROM manufacturing_confirmed_allocations
+      WHERE order_id = ${params.data.id}
+      LIMIT 1
+    `);
+    if (allocationRows.rows.length) return "component-managed" as const;
+
+    const [order] = await tx.select().from(ordersTable).where(eq(ordersTable.id, params.data.id));
+    if (!order) return "missing" as const;
+
+    const items = await tx.select().from(orderItemsTable).where(eq(orderItemsTable.orderId, order.id));
+    const itemIds = items.map(i => i.id);
+
+    // Preserve legacy stock restoration for orders without Phase 2 allocations.
+    const NO_STOCK_YET = ["draft", "portal_draft", "portal_pending"];
+    const ALREADY_GONE = ["dispatched", "delivered"];
+    const shouldRestoreStock = !NO_STOCK_YET.includes(order.status) && !ALREADY_GONE.includes(order.status);
+    if (shouldRestoreStock) {
+      for (const item of items) {
+        if (!item.purchaseRequired && item.productId && item.quantity) {
+          await tx.execute(sql`
+            UPDATE products SET stock_quantity = COALESCE(stock_quantity, 0) + ${item.quantity}
+            WHERE id = ${item.productId}
+          `);
+        }
+      }
+    }
+
+    if (itemIds.length > 0) {
+      await tx.delete(purchaseOrderItemsTable)
+        .where(inArray(purchaseOrderItemsTable.orderItemId, itemIds));
+    }
+    await tx.delete(purchaseOrderItemsTable)
+      .where(eq(purchaseOrderItemsTable.orderId, order.id));
+
+    const draftPurchaseOrders = await tx.select({ id: purchaseOrdersTable.id })
+      .from(purchaseOrdersTable)
+      .where(eq(purchaseOrdersTable.status, "draft"));
+    const emptyDraftPoIds: number[] = [];
+    for (const po of draftPurchaseOrders) {
+      const [{ count }] = await tx.select({ count: sql<number>`count(*)::int` })
+        .from(purchaseOrderItemsTable)
+        .where(eq(purchaseOrderItemsTable.poId, po.id));
+      if (count === 0) emptyDraftPoIds.push(po.id);
+    }
+    if (emptyDraftPoIds.length > 0) {
+      await tx.delete(purchaseOrdersTable).where(inArray(purchaseOrdersTable.id, emptyDraftPoIds));
+    }
+
+    const linkedWorksheets = await tx
+      .select({ id: worksheetsTable.id, status: worksheetsTable.status })
+      .from(worksheetsTable)
+      .where(eq(worksheetsTable.orderId, order.id));
+    const worksheetIdsToDelete = linkedWorksheets
+      .filter(ws => ws.status !== "complete")
+      .map(ws => ws.id);
+    if (worksheetIdsToDelete.length > 0) {
+      await tx.delete(worksheetsTable).where(inArray(worksheetsTable.id, worksheetIdsToDelete));
+    }
+
+    await tx.insert(orderLogsTable).values({
+      orderId: order.id,
+      action: "Order deleted",
+      actor: getActor(req) || "System",
+      details: `Order ${order.orderNumber} deleted (was ${order.status})`,
+    });
+    await tx.delete(ordersTable).where(eq(ordersTable.id, order.id));
+    return "deleted" as const;
+  });
+
+  if (result === "missing") {
     res.status(404).json({ error: "Order not found" });
     return;
   }
-
-  const items = await db.select().from(orderItemsTable).where(eq(orderItemsTable.orderId, order.id));
-  const itemIds = items.map(i => i.id);
-
-  // ── 1. Restore stock ────────────────────────────────────────────────────────
-  // Stock is deducted at confirmation. Restore for any status that isn't
-  // a pre-confirmation draft or a post-dispatch state (items have already left).
-  const NO_STOCK_YET = ["draft", "portal_draft", "portal_pending"];
-  const ALREADY_GONE = ["dispatched", "delivered"];
-  const shouldRestoreStock = !NO_STOCK_YET.includes(order.status) && !ALREADY_GONE.includes(order.status);
-
-  if (shouldRestoreStock) {
-    for (const item of items) {
-      if (!item.purchaseRequired && item.productId && item.quantity) {
-        await db.execute(
-          sql`UPDATE products SET stock_quantity = COALESCE(stock_quantity, 0) + ${item.quantity} WHERE id = ${item.productId}`
-        );
-      }
-    }
-  }
-
-  // ── 2. Clean up purchase order items linked to this order ──────────────────
-  // Delete PO items that reference this order, then remove any POs that are
-  // now empty and haven't been sent to the supplier yet.
-  if (itemIds.length > 0) {
-    await db.delete(purchaseOrderItemsTable)
-      .where(inArray(purchaseOrderItemsTable.orderItemId, itemIds));
-  }
-  // Also catch any PO items linked by orderId (in case orderItemId wasn't set)
-  await db.delete(purchaseOrderItemsTable)
-    .where(eq(purchaseOrderItemsTable.orderId, order.id));
-
-  // Remove draft POs that are now empty
-  const emptyDraftPoIds = await db
-    .select({ id: purchaseOrdersTable.id })
-    .from(purchaseOrdersTable)
-    .where(and(eq(purchaseOrdersTable.status, "draft")))
-    .then(async (pos) => {
-      const ids: number[] = [];
-      for (const po of pos) {
-        const [{ count }] = await db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(purchaseOrderItemsTable)
-          .where(eq(purchaseOrderItemsTable.poId, po.id));
-        if (count === 0) ids.push(po.id);
-      }
-      return ids;
+  if (result === "component-managed") {
+    res.status(409).json({
+      error: "This order has Phase 2 component allocations and cannot be deleted. Cancel it through the authenticated staff order route first.",
     });
-  if (emptyDraftPoIds.length > 0) {
-    await db.delete(purchaseOrdersTable).where(inArray(purchaseOrdersTable.id, emptyDraftPoIds));
+    return;
   }
-
-  // ── 3. Clean up worksheets linked to this order ────────────────────────────
-  // Remove worksheets that haven't been completed yet. Completed worksheets
-  // represent work already done and are kept for records.
-  const linkedWorksheets = await db
-    .select({ id: worksheetsTable.id, status: worksheetsTable.status })
-    .from(worksheetsTable)
-    .where(eq(worksheetsTable.orderId, order.id));
-
-  const worksheetIdsToDelete = linkedWorksheets
-    .filter(ws => ws.status !== "complete")
-    .map(ws => ws.id);
-
-  if (worksheetIdsToDelete.length > 0) {
-    // worksheet_items cascade-delete when worksheet is deleted
-    await db.delete(worksheetsTable).where(inArray(worksheetsTable.id, worksheetIdsToDelete));
-  }
-
-  // ── 4. Delete the order (cascades to order_items, logs, email_logs) ─────────
-  await logOrderAction(order.id, "Order deleted", getActor(req), `Order ${order.orderNumber} deleted (was ${order.status})`);
-  await db.delete(ordersTable).where(eq(ordersTable.id, order.id));
   res.sendStatus(204);
 });
 
@@ -3383,6 +3490,17 @@ router.post("/orders/:id/merge-into/:targetId", async (req, res): Promise<void> 
 
   if (!sourceOrder) { res.status(404).json({ error: "Source order not found." }); return; }
   if (sourceOrder.status !== "draft") { res.status(400).json({ error: "Only draft orders can be merged." }); return; }
+  const componentAllocations = await db.execute(sql`
+    SELECT id FROM manufacturing_confirmed_allocations
+    WHERE order_id = ${sourceId}
+    LIMIT 1
+  `);
+  if (componentAllocations.rows.length) {
+    res.status(409).json({
+      error: "This order has Phase 2 component allocations and cannot be merged or deleted.",
+    });
+    return;
+  }
 
   const [targetOrder] = await db.select({
     id: ordersTable.id,

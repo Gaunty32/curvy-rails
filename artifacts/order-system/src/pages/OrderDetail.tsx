@@ -39,6 +39,7 @@ import { useToast } from "@/hooks/use-toast";
 import { usePriceConfirm } from "@/components/PriceConfirmDialog";
 import { ArrowLeft, Plus, Minus, Trash2, FileText, PackageX, Loader2, Check, ChevronsUpDown, ChevronLeft, Palette, Ruler, Sparkles, User, Archive, Link as LinkIcon, ShoppingBag, Package, ClipboardList, PackageCheck, Printer, CheckCircle2, Clock, TriangleAlert, Calendar, Pencil, BookOpen, ExternalLink, MapPin, Wand2, Truck, Globe, XCircle, X, Mail, Lock, LockOpen, Download, MessageSquare, Paperclip, Search, RotateCcw, Lightbulb, BadgePercent, Wrench, Package2, GitMerge, TrendingUp } from "lucide-react";
 import { OrderMessages } from "@/components/OrderMessages";
+import { OrderReadinessPanel } from "@/components/manufacturing/OrderReadinessPanel";
 import { FileDropZone, FileDropZoneContent } from "@/components/FileDropZone";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
@@ -2366,6 +2367,7 @@ export default function OrderDetail() {
           );
         })()}
 
+        <OrderReadinessPanel orderId={orderId} items={order.items ?? []} />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="lg:col-span-2 shadow-sm border-border/50 flex flex-col overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between border-b border-border/40 py-4 bg-muted/10 gap-3 flex-wrap">

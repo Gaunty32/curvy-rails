@@ -3063,6 +3063,19 @@ router.post("/portal/admin/orders/merge", async (req: Request, res: Response) =>
     res.status(404).json({ error: "One or more orders not found" }); return;
   }
 
+  const componentAllocations = await db.execute(sql`
+    SELECT order_id
+    FROM manufacturing_confirmed_allocations
+    WHERE order_id IN (${sql.join(orderIds.map(id => sql`${id}`), sql`, `)})
+    LIMIT 1
+  `);
+  if (componentAllocations.rows.length) {
+    res.status(409).json({
+      error: "Orders with Phase 2 component allocations cannot be merged.",
+    });
+    return;
+  }
+
   // Safety: must all be portal_pending or confirmed — not shipped/cancelled/etc.
   const invalidStatus = orders.filter(o => !["portal_pending", "confirmed"].includes(o.status));
   if (invalidStatus.length > 0) {
@@ -3218,6 +3231,20 @@ router.post("/portal/admin/orders/:id/confirm", async (req: Request, res: Respon
   `);
   const ord = orderRows.rows[0] as any;
   if (!ord) { res.status(404).json({ error: "Order not found" }); return; }
+
+  const manualReviewAllocation = await db.execute(sql`
+    SELECT 1
+    FROM manufacturing_confirmed_allocations
+    WHERE order_id = ${orderId}
+      AND manual_review_required = true
+    LIMIT 1
+  `);
+  if (manualReviewAllocation.rows.length > 0) {
+    res.status(409).json({
+      error: "This Phase 2 order requires manual review before it can be confirmed. Resolve the component allocation review first.",
+    });
+    return;
+  }
 
   // Paid website orders must be checked against the customer's wardrobe before
   // they enter purchasing/production. An exact wardrobe row with a null finish is
@@ -3404,10 +3431,21 @@ router.post("/portal/admin/orders/:id/confirm", async (req: Request, res: Respon
       .from(orderItemsTable)
       .where(eq(orderItemsTable.orderId, orderId));
 
+    const phase2AllocationRows = await db.execute(sql`
+      SELECT DISTINCT order_item_id
+      FROM manufacturing_confirmed_allocations
+      WHERE order_id = ${orderId}
+    `);
+    const phase2ManagedItemIds = new Set(
+      (phase2AllocationRows.rows as Array<{ order_item_id: number }>).map(row => Number(row.order_item_id)),
+    );
+
     // Items already allocated from customer finished stock must NOT be deducted from
     // Warehouse stock — items were already removed from customer_finished_items at
-    // order creation / manager-submit time.
-    const sbsItems = allItems.filter(i => i.stockStatus !== 'allocated');
+    // order creation / manager-submit time. Likewise, Phase 2 component-managed
+    // lines must never enter the legacy warehouse-stock or purchasing path.
+    const sbsItems = allItems.filter(i =>
+      i.stockStatus !== 'allocated' && !phase2ManagedItemIds.has(i.id));
 
     const productIds = [...new Set(sbsItems.map(i => i.productId).filter(Boolean))] as number[];
     const allocatedItemIds: number[] = [];
@@ -3418,7 +3456,7 @@ router.post("/portal/admin/orders/:id/confirm", async (req: Request, res: Respon
     }
     // Customer-stock-allocated items also go straight to production (picking list)
     for (const item of allItems) {
-      if (item.stockStatus === 'allocated') allocatedItemIds.push(item.id);
+      if (item.stockStatus === 'allocated' && !phase2ManagedItemIds.has(item.id)) allocatedItemIds.push(item.id);
     }
 
     if (productIds.length > 0) {
@@ -3720,48 +3758,74 @@ router.post("/portal/admin/orders/:id/reject", async (req: Request, res: Respons
   const orderId = parseInt(req.params.id, 10);
   const { reason } = z.object({ reason: z.string().optional() }).parse(req.body);
 
-  // Restore open PO balance if this order drew from one.
-  // Guard: only run when the order is not already rejected — ensures idempotency
-  // if the endpoint is accidentally called twice for the same order.
-  const orderRows = await db.execute(sql`
-    SELECT customer_id, po_number, total_amount, carriage_amount, portal_status
-    FROM orders WHERE id = ${orderId} AND source IN ('portal', 'shop') LIMIT 1
-  `);
-  const ordForPo = orderRows.rows[0] as any;
-  if (ordForPo?.portal_status !== 'rejected' && ordForPo?.po_number && ordForPo?.customer_id) {
-    const orderGross = parseFloat(ordForPo.total_amount ?? '0') + parseFloat(ordForPo.carriage_amount ?? '0');
-    if (orderGross > 0) {
-      const poRows = await db.execute(sql`
-        SELECT id, total_value, remaining_value
-        FROM customer_open_pos
-        WHERE customer_id = ${ordForPo.customer_id}
-          AND po_number = ${ordForPo.po_number}
-          AND status IN ('active', 'exhausted')
-        ORDER BY created_at DESC LIMIT 1
-      `);
-      const po = poRows.rows[0] as any;
-      if (po) {
-        const newRemaining = Math.min(
-          parseFloat(po.total_value),
-          parseFloat(po.remaining_value) + orderGross
-        );
-        await db.execute(sql`
-          UPDATE customer_open_pos
-          SET remaining_value = ${newRemaining.toFixed(2)},
-              status = 'active',
-              updated_at = now()
-          WHERE id = ${po.id}
+  const result = await db.transaction(async (tx) => {
+    const orderRows = await tx.execute(sql`
+      SELECT id, customer_id, po_number, total_amount, carriage_amount, portal_status
+      FROM orders
+      WHERE id = ${orderId} AND source IN ('portal', 'shop')
+      FOR UPDATE
+    `);
+    const ordForPo = orderRows.rows[0] as any;
+    if (!ordForPo) return "not-found" as const;
+
+    // The staff cancellation endpoint is the only supported path for
+    // component-managed paid orders: it authenticates staff and releases the
+    // allocation in the same transaction as the status change. Do not let
+    // this separate portal/admin path bypass that release.
+    const allocationRows = await tx.execute(sql`
+      SELECT id
+      FROM manufacturing_confirmed_allocations
+      WHERE order_id = ${orderId}
+        AND status = 'CONFIRMED'
+      LIMIT 1
+    `);
+    if (allocationRows.rows.length) return "component-managed" as const;
+
+    // Restore open PO balance if this order drew from one. Only do this on
+    // the first rejection, preserving the existing idempotency behavior.
+    if (ordForPo.portal_status !== "rejected" && ordForPo.po_number && ordForPo.customer_id) {
+      const orderGross = parseFloat(ordForPo.total_amount ?? "0") + parseFloat(ordForPo.carriage_amount ?? "0");
+      if (orderGross > 0) {
+        const poRows = await tx.execute(sql`
+          SELECT id, total_value, remaining_value
+          FROM customer_open_pos
+          WHERE customer_id = ${ordForPo.customer_id}
+            AND po_number = ${ordForPo.po_number}
+            AND status IN ('active', 'exhausted')
+          ORDER BY created_at DESC LIMIT 1
         `);
+        const po = poRows.rows[0] as any;
+        if (po) {
+          const newRemaining = Math.min(
+            parseFloat(po.total_value),
+            parseFloat(po.remaining_value) + orderGross
+          );
+          await tx.execute(sql`
+            UPDATE customer_open_pos
+            SET remaining_value = ${newRemaining.toFixed(2)},
+                status = 'active',
+                updated_at = now()
+            WHERE id = ${po.id}
+          `);
+        }
       }
     }
-  }
 
-  await db.execute(sql`
-    UPDATE orders SET portal_status = 'rejected', status = 'cancelled',
-      notes = COALESCE(notes || E'\n', '') || ${'Rejected: ' + (reason ?? 'No reason given')},
-      updated_at = now()
-    WHERE id = ${orderId} AND source IN ('portal', 'shop')
-  `);
+    await tx.execute(sql`
+      UPDATE orders SET portal_status = 'rejected', status = 'cancelled',
+        notes = COALESCE(notes || E'\n', '') || ${'Rejected: ' + (reason ?? 'No reason given')},
+        updated_at = now()
+      WHERE id = ${orderId} AND source IN ('portal', 'shop')
+    `);
+    return "rejected" as const;
+  });
+
+  if (result === "component-managed") {
+    res.status(409).json({
+      error: "This order has active Phase 2 component allocations and cannot be rejected here. Cancel it through the authenticated staff order route first, then retry.",
+    });
+    return;
+  }
   res.json({ ok: true });
 });
 
@@ -3776,6 +3840,19 @@ router.post("/portal/admin/orders/:id/unconfirm", async (req: Request, res: Resp
   const ord = orderRows.rows[0] as any;
   if (!ord) { res.status(404).json({ error: "Order not found" }); return; }
   if (ord.status !== "confirmed") { res.status(400).json({ error: "Order is not in confirmed status" }); return; }
+
+  const componentAllocationHistory = await db.execute(sql`
+    SELECT 1
+    FROM manufacturing_confirmed_allocations
+    WHERE order_id = ${orderId}
+    LIMIT 1
+  `);
+  if (componentAllocationHistory.rows.length > 0) {
+    res.status(409).json({
+      error: "Orders with Phase 2 component allocation history cannot be unconfirmed here. Cancel through the authenticated staff order route instead.",
+    });
+    return;
+  }
 
   // ── Restore stock allocations ─────────────────────────────────────────────
   // Use sbs_stock_allocated_qty which was persisted at confirm time to record exactly
