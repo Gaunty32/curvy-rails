@@ -9,6 +9,8 @@ export interface Product {
   sizes: number[];
   description: string;
   image: string;
+  images?: string[];
+  mockup?: boolean;
   /** Demo flag: placeholder imagery that the real catalogue will replace. */
   placeholder: boolean;
 }

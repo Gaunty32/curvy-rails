@@ -1,5 +1,5 @@
 import type { Product } from './types';
-import { SEED_PRODUCTS } from './seed';
+import { FIRST_PRODUCT, SEED_PRODUCTS } from './seed';
 
 /**
  * Catalogue repository abstraction. The prototype implements it on top of
@@ -15,14 +15,26 @@ export interface ProductRepository {
 }
 
 const KEY = 'cr.demo.catalogue.v1';
+const FIRST_PRODUCT_ADDED = 'cr.demo.catalogue.patience-added';
 
 function read(): Product[] {
   try {
     const raw = localStorage.getItem(KEY);
+    let items = SEED_PRODUCTS;
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed as Product[];
+      if (Array.isArray(parsed)) items = parsed as Product[];
     }
+    // Add the first supplied design once, preserving existing catalogue edits.
+    // The marker also preserves a deliberate deletion of this new product.
+    if (!localStorage.getItem(FIRST_PRODUCT_ADDED)) {
+      if (!items.some((p) => p.id === FIRST_PRODUCT.id)) {
+        items = [FIRST_PRODUCT, ...items];
+        localStorage.setItem(KEY, JSON.stringify(items));
+      }
+      localStorage.setItem(FIRST_PRODUCT_ADDED, 'true');
+    }
+    return items;
   } catch { /* fall through to seed */ }
   return SEED_PRODUCTS;
 }

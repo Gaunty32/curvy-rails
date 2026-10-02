@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useParams } from 'wouter';
 import { usePageHead } from '@/lib/use-page-head';
-import { asset, gbp, useProducts } from '@/data/catalogue';
+import { gbp, useProducts } from '@/data/catalogue';
+import { ProductGallery } from '@/components/product-gallery';
 import { useBasket } from '@/data/basket';
 import { SizePicker } from '@/components/size-picker';
 import { ProductCard } from '@/components/product-card';
@@ -26,10 +27,7 @@ export default function ProductPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 md:px-8 md:py-10">
       <div className="grid gap-8 md:grid-cols-2 md:gap-14">
-        <div className="relative bg-secondary">
-          <img src={asset(p.image)} alt={p.name} fetchPriority="high" className="aspect-square w-full object-cover" />
-          {p.placeholder && <span className="absolute left-3 top-3 bg-black px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-white">Placeholder image</span>}
-        </div>
+        <ProductGallery key={p.id} product={p} />
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{CATEGORY_LABEL[p.category]} &middot; {p.colour}</p>
           <h1 data-testid="text-product-name" className="font-display mt-2 text-3xl uppercase sm:text-4xl md:text-5xl">{p.name}</h1>

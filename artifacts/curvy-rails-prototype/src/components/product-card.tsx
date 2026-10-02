@@ -17,7 +17,7 @@ export function ProductCard({ product }: { product: Product }) {
       <Link href={`/products/${product.slug}`} className="relative block aspect-square overflow-hidden bg-secondary">
         <img src={asset(product.image)} alt={product.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
         <span aria-hidden className="absolute right-2 top-2 rounded-full bg-white/90 p-1.5"><Heart className="h-4 w-4" /></span>
-        {product.placeholder && <span className="absolute bottom-2 left-2 bg-black/80 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">Placeholder</span>}
+        {(product.placeholder || product.mockup) && <span className="absolute bottom-2 left-2 bg-black/80 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">{product.mockup ? 'Product mock-up' : 'Placeholder'}</span>}
       </Link>
       <h3 className="mt-3 text-sm font-bold leading-snug">{product.name}</h3>
       <p className="text-sm font-semibold">{gbp(product.price)}</p>
@@ -30,7 +30,7 @@ export function ProductCard({ product }: { product: Product }) {
         <DialogContent className="max-h-[90dvh] w-[calc(100vw-2rem)] max-w-md overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display text-xl uppercase">{product.name}</DialogTitle>
-            <DialogDescription>{gbp(product.price)} - demo placeholder product</DialogDescription>
+            <DialogDescription>{gbp(product.price)} — {product.mockup ? 'product mock-up; demo price and sizes' : product.placeholder ? 'demo placeholder product' : 'demo product'}</DialogDescription>
           </DialogHeader>
           <SizePicker sizes={product.sizes} value={size} onChange={setSize} />
           <button data-testid={`button-quickshop-add-${product.id}`} disabled={!size}

@@ -11,7 +11,23 @@ const mk = (n: number, name: string, category: 'tshirt' | 'hoodie', colour: 'Bla
   description, image: `assets/${img}.jpg`, placeholder: true,
 });
 
+export const FIRST_PRODUCT: Product = {
+  id: 'patience-sold-separately',
+  slug: 'patience-sold-separately-t-shirt',
+  name: 'Patience Sold Separately T-Shirt',
+  category: 'tshirt',
+  colour: 'White',
+  price: 24,
+  sizes: [...ALL_SIZES],
+  description: 'A white T-shirt featuring our “Patience Sold Separately” design, with a skeleton hand, crescent moon, pink roses and a moth. Supplied product mock-ups show the design on its own and worn by a model. Price and sizes are demonstration values pending confirmation.',
+  image: 'assets/patience-sold-separately.webp',
+  images: ['assets/patience-sold-separately.webp', 'assets/patience-sold-separately-model.webp'],
+  placeholder: false,
+  mockup: true,
+};
+
 export const SEED_PRODUCTS: Product[] = [
+  FIRST_PRODUCT,
   mk(1, 'Curvy Rails T-Shirt Black', 'tshirt', 'Black', 'p1', tee),
   mk(2, 'Curvy Rails T-Shirt White', 'tshirt', 'White', 'p2', tee),
   mk(3, 'Curvy Rails Hoodie Black', 'hoodie', 'Black', 'p3', hood),
