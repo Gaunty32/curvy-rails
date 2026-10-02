@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/curvy-rails-prototype/"
+title = "Curvy Rails Storefront Prototype"
+description = "Standalone demonstration shop for Curvy Rails plus-size tees and hoodies, sizes 16–32, with editable sample catalogue and basket. No live payments or external services."
+version = "1.0.0"
+id = "artifacts/curvy-rails-prototype"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/curvy-rails-prototype/" ]
+localPort = 22564
+
+[services.development]
+run = "pnpm --filter @workspace/curvy-rails-prototype run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/curvy-rails-prototype", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/curvy-rails-prototype/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22564"
+BASE_PATH = "/curvy-rails-prototype/"

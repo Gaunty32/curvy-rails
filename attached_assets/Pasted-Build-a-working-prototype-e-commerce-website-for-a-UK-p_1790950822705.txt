@@ -1,0 +1,86 @@
+Build a working prototype e-commerce website for a UK plus-size clothing brand called Curvy Rails.
+
+This is a demonstration site only. Do not connect live payments, Stripe, ShipStation, email sending or other production services yet.
+
+Use the supplied Curvy Rails logo and recreate the visual direction of the approved homepage concept: predominantly black and white, bold, confident, modern, friendly and community-led. It must not look like a generic corporate e-commerce template.
+
+Curvy Rails currently has an established community buying and selling pre-loved plus-size clothing through TikTok and Vinted. The new website represents the next stage: their own branded range of T-shirts and hoodies, initially sizes 16–32.
+
+The primary objective of V1 is simple: sell products.
+
+Create:
+
+Home
+Shop
+T-Shirts
+Hoodies
+Individual product pages
+Basket/cart
+About Us
+Community
+The Rails loyalty page
+Contact
+Delivery & Returns
+Privacy Policy
+Terms
+
+Use realistic placeholder product photography for approximately 8–12 products. Products should primarily be black and white T-shirts and hoodies carrying Curvy Rails-style printed graphics. Make it obvious these are placeholder products/images that can later be replaced through the admin/product system.
+
+The homepage should follow this structure:
+
+Hero:
+“CLOTHES MADE FOR CURVES. NOT COMPROMISES.”
+Supporting copy explaining that Curvy Rails is creating its own range of T-shirts and hoodies for sizes 16–32.
+Primary CTA: SHOP THE COLLECTION.
+
+Start Here:
+Four featured products with image, name, price, sizes and Quick Shop.
+
+Community section:
+“YOU FOUND US. NOW STICK AROUND.”
+Explain that Curvy Rails grew from a community buying and selling pre-loved fashion on TikTok and Vinted and is now creating something of its own.
+
+The Rails:
+Introduce a future loyalty/community system visually as:
+
+SHOP → EARN → BELONG → REWARD
+
+Customers should eventually be able to earn recognition/rewards regardless of whether their relationship began through the website, TikTok, Vinted or other supported channels. Do not implement complicated loyalty logic yet; build the front-end concept and architecture so it can be developed later.
+
+Why Curvy Rails?
+
+Sizes 16–32
+Made for our community
+Real people. Real feedback.
+
+Our Story:
+Explain the journey from pre-loved fashion and community selling into Curvy Rails' own clothing label.
+
+Email/community signup:
+“GET ON THE RAILS”
+“New drops, live sales and rewards. No nonsense.”
+
+Include responsive mobile design throughout.
+
+Keep the architecture deliberately straightforward. We want to launch quickly rather than over-engineer V1.
+
+The eventual production system will need to support:
+
+Stripe payments
+ShipStation fulfilment
+HighLevel CRM
+Customer accounts
+Order history
+Loyalty/community functionality
+TikTok/Vinted-origin customer recognition where technically and contractually appropriate
+Analytics and attribution
+
+Do not implement those external integrations in this prototype.
+
+Seed the site with realistic demonstration products and data so every customer-facing page can be properly tested.
+
+Add a simple admin/product structure so products, prices, sizes, descriptions and images can easily be replaced with the real Curvy Rails catalogue later.
+
+Host the prototype using the Replit-provided URL. Do not make DNS changes or connect the client's GoDaddy domain.
+
+Before making major architectural decisions, favour the simplest reliable implementation that allows this prototype to become the production website later without rebuilding it from scratch.
