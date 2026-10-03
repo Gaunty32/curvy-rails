@@ -9,7 +9,7 @@ import { SizePicker } from './size-picker';
 
 export function ProductCard({ product }: { product: Product }) {
   const [open, setOpen] = useState(false);
-  const [size, setSize] = useState<number | null>(null);
+  const [size, setSize] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
   const basket = useBasket();
   return (
@@ -30,7 +30,7 @@ export function ProductCard({ product }: { product: Product }) {
         <DialogContent className="max-h-[90dvh] w-[calc(100vw-2rem)] max-w-md overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display text-xl uppercase">{product.name}</DialogTitle>
-            <DialogDescription>{gbp(product.price)} — {product.mockup ? 'product mock-up; demo price and sizes' : product.placeholder ? 'demo placeholder product' : 'demo product'}</DialogDescription>
+            <DialogDescription>{gbp(product.price)} — {product.mockup ? 'product mock-up; demo price' : product.placeholder ? 'demo placeholder product' : 'demo product'}</DialogDescription>
           </DialogHeader>
           <SizePicker sizes={product.sizes} value={size} onChange={setSize} />
           <button data-testid={`button-quickshop-add-${product.id}`} disabled={!size}

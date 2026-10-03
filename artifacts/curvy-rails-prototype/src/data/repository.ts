@@ -1,4 +1,5 @@
 import type { Product } from './types';
+import { normalizeSize } from './types';
 import { FIRST_PRODUCT, SEED_PRODUCTS } from './seed';
 
 /**
@@ -34,7 +35,14 @@ function read(): Product[] {
       }
       localStorage.setItem(FIRST_PRODUCT_ADDED, 'true');
     }
-    return items;
+    const normalized = items.map((p) => ({
+      ...p,
+      sizes: [...new Set(p.sizes.map(normalizeSize))],
+    }));
+    if (raw && JSON.stringify(normalized) !== JSON.stringify(items)) {
+      localStorage.setItem(KEY, JSON.stringify(normalized));
+    }
+    return normalized;
   } catch { /* fall through to seed */ }
   return SEED_PRODUCTS;
 }

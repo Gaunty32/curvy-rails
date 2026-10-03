@@ -96,7 +96,7 @@ export default function Admin() {
                 <label className="font-semibold">Price (£)<input data-testid="input-product-price" type="number" min="0" step="0.5" className={field} value={editing.price} onChange={(e) => set({ price: Number(e.target.value) })} /></label>
               </div>
               <div><p className="font-semibold">Sizes</p>
-                <div className="mt-1 flex flex-wrap gap-1">{ALL_SIZES.map((s) => { const on = editing.sizes.includes(s); return <button key={s} type="button" aria-pressed={on} onClick={() => set({ sizes: on ? editing.sizes.filter((x) => x !== s) : [...editing.sizes, s].sort((a, b) => a - b) })} className={`h-11 w-11 border border-black ${on ? 'bg-black text-white' : ''}`}>{s}</button>; })}</div>
+                <div className="mt-1 flex flex-wrap gap-2">{ALL_SIZES.map((s) => { const on = editing.sizes.includes(s); return <button key={s} type="button" aria-pressed={on} onClick={() => set({ sizes: on ? editing.sizes.filter((x) => x !== s) : [...editing.sizes, s].sort() })} className={`h-11 min-w-24 px-3 border border-black ${on ? 'bg-black text-white' : ''}`}>{s}</button>; })}</div>
               </div>
               <label className="block font-semibold">Description<textarea rows={3} className={field} value={editing.description} onChange={(e) => set({ description: e.target.value })} /></label>
               <div className="flex gap-3">

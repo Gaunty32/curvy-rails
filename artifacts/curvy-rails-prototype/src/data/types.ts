@@ -6,7 +6,7 @@ export interface Product {
   category: Category;
   colour: 'Black' | 'White';
   price: number;
-  sizes: number[];
+  sizes: string[];
   description: string;
   image: string;
   images?: string[];
@@ -14,5 +14,12 @@ export interface Product {
   /** Demo flag: placeholder imagery that the real catalogue will replace. */
   placeholder: boolean;
 }
-export const ALL_SIZES = [16, 18, 20, 22, 24, 26, 28, 30, 32];
+export const ALL_SIZES = ['16-24', '26-32'];
+/** Upgrade old individual UK sizes to the brand's two size options. */
+export function normalizeSize(size: string | number): string {
+  const n = typeof size === 'number' ? size : /^\d+$/.test(size) ? Number(size) : null;
+  if (n !== null && n >= 16 && n <= 24) return '16-24';
+  if (n !== null && n >= 26 && n <= 32) return '26-32';
+  return String(size);
+}
 export const CATEGORY_LABEL: Record<Category, string> = { tshirt: 'T-Shirt', hoodie: 'Hoodie' };

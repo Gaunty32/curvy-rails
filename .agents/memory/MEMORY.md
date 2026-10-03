@@ -1,3 +1,4 @@
 - [Inventory reconciliation safety](inventory-reconciliation.md) — stale stocktakes need movement-history checks, even when the current balance matches the draft.
 - [Paid holds after expiry](paid-hold-expiry.md) — preserve the paid order for explicit staff review if its component hold expires and stock is lost; never imply normal fulfillment.
 - [Storefront prototype direction](storefront-prototype-direction.md) — the separate demonstration storefront was approved; preserve its supplied visual direction and mobile-first priorities.
+- [Product size policy](product-size-policy.md) — Curvy Rails offers two size options, 16–24 and 26–32, unless the user advises otherwise.

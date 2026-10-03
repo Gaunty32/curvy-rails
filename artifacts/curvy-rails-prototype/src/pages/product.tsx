@@ -13,7 +13,7 @@ export default function ProductPage() {
   const products = useProducts();
   const p = products.find((x) => x.slug === slug);
   usePageHead(p ? p.name : 'Product not found', p ? p.description : 'This product could not be found in the demo catalogue.');
-  const [size, setSize] = useState<number | null>(null);
+  const [size, setSize] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const basket = useBasket();

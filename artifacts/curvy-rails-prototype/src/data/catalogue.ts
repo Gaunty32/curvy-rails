@@ -17,4 +17,4 @@ export function useProducts(): Product[] {
 }
 export const gbp = (n: number) => `£${n.toFixed(2)}`;
 export const asset = (p: string) => (/^(https?:|data:|blob:)/.test(p) ? p : `${import.meta.env.BASE_URL}${p.replace(/^\//, '')}`);
-export const sizeRange = (s: number[]) => (s.length ? `${Math.min(...s)} - ${Math.max(...s)}` : 'Sold out');
+export const sizeRange = (s: string[]) => (s.length ? s.join(' / ') : 'Sold out');

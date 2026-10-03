@@ -19,7 +19,7 @@ export const FIRST_PRODUCT: Product = {
   colour: 'White',
   price: 24,
   sizes: [...ALL_SIZES],
-  description: 'A white T-shirt featuring our “Patience Sold Separately” design, with a skeleton hand, crescent moon, pink roses and a moth. Supplied product mock-ups show the design on its own and worn by a model. Price and sizes are demonstration values pending confirmation.',
+  description: 'A white T-shirt featuring our “Patience Sold Separately” design, with a skeleton hand, crescent moon, pink roses and a moth. Available in two size options: 16-24 and 26-32. Supplied product mock-ups show the design on its own and worn by a model. Price is a demonstration value pending confirmation.',
   image: 'assets/patience-sold-separately.webp',
   images: ['assets/patience-sold-separately.webp', 'assets/patience-sold-separately-model.webp'],
   placeholder: false,

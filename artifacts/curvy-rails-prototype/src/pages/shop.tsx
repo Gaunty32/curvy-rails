@@ -15,7 +15,7 @@ export default function Shop({ category }: { category?: Category }) {
   usePageHead(m[0], m[1]);
   const products = useProducts();
   const [q, setQ] = useState('');
-  const [size, setSize] = useState(0);
+  const [size, setSize] = useState('');
   const [colour, setColour] = useState('');
   const [sort, setSort] = useState('featured');
   const list = useMemo(() => {
@@ -31,8 +31,8 @@ export default function Shop({ category }: { category?: Category }) {
       <p className="mt-2 text-sm text-muted-foreground">{list.length} products. Placeholder range for demonstration.</p>
       <div className="mt-6 grid grid-cols-2 gap-2 sm:gap-3 md:flex md:flex-wrap">
         <input data-testid="input-search" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products" aria-label="Search" className={`${field} col-span-2 md:w-64`} />
-        <select data-testid="select-size" aria-label="Size" value={size} onChange={(e) => setSize(+e.target.value)} className={field}>
-          <option value={0}>Any size</option>{ALL_SIZES.map((s) => <option key={s} value={s}>Size {s}</option>)}
+        <select data-testid="select-size" aria-label="Size" value={size} onChange={(e) => setSize(e.target.value)} className={field}>
+          <option value="">Any size</option>{ALL_SIZES.map((s) => <option key={s} value={s}>Size {s}</option>)}
         </select>
         <select data-testid="select-colour" aria-label="Colour" value={colour} onChange={(e) => setColour(e.target.value)} className={field}>
           <option value="">Any colour</option><option>Black</option><option>White</option>
@@ -44,7 +44,7 @@ export default function Shop({ category }: { category?: Category }) {
       {list.length === 0 ? (
         <div data-testid="text-empty" className="mt-12 border border-dashed border-black p-12 text-center">
           <p className="font-display text-2xl uppercase">Nothing matches</p>
-          <button className="mt-3 min-h-11 px-3 underline" onClick={() => { setQ(''); setSize(0); setColour(''); }}>Clear filters</button>
+          <button className="mt-3 min-h-11 px-3 underline" onClick={() => { setQ(''); setSize(''); setColour(''); }}>Clear filters</button>
         </div>
       ) : (
         <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">{list.map((p) => <ProductCard key={p.id} product={p} />)}</div>
