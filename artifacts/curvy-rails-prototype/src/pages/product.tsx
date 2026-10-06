@@ -47,6 +47,7 @@ export default function ProductPage() {
           </div>
           {added && <p className="mt-3 text-sm font-semibold">Added to basket. <Link href="/basket" className="underline">View basket</Link></p>}
           <ul className="mt-8 space-y-1 border-t pt-4 text-sm text-muted-foreground">
+            <li>Dispatched within 7 working days, excluding weekends.</li>
             <li>UK mainland delivery: £3.99 including VAT, free on orders over £50.</li>
             <li>Outside UK mainland: orders accepted; shipping quoted separately.</li>
             <li>Returns info on our <Link href="/delivery-returns" className="underline">Delivery &amp; Returns</Link> page</li>

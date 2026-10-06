@@ -2,6 +2,8 @@
 - [Paid holds after expiry](paid-hold-expiry.md) — preserve the paid order for explicit staff review if its component hold expires and stock is lost; never imply normal fulfillment.
 - [Storefront prototype direction](storefront-prototype-direction.md) — the separate demonstration storefront was approved; preserve its supplied visual direction and mobile-first priorities.
 - [Product size policy](product-size-policy.md) — Curvy Rails offers two size options, 16–24 and 26–32, unless the user advises otherwise.
-- [Launch services](launch-services.md) — 123-reg is the chosen registrar; Resend is for customer order notifications and status updates.
+- [Launch services](launch-services.md) — 123-reg registrar; Resend order notifications/status updates; Stripe and Klarna requested payment options.
 - [VAT and delivery policy](vat-delivery-policy.md) — prices include VAT; mainland shipping £3.99; other destinations quoted separately; free shipping over £50.
 - [Product pricing policy](product-pricing-policy.md) — all T-shirts cost £20 and all hoodies £35, including VAT.
+- [Dispatch and production policy](dispatch-production-policy.md) — promise 7 working days; internal aim 5; each product’s printed design is a separate picksheet item.
+- [Signup and rewards direction](signup-rewards-direction.md) — email and phone required; names and DOB optional; preview first, with custom rewards rules not yet specified.
