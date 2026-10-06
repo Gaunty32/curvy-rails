@@ -5,7 +5,17 @@ import { saveLocal } from '@/data/local-forms';
 export default function Contact() {
   const [f, setF] = useState({ name: '', email: '', message: '' });
   const [done, setDone] = useState(false);
-  const submit = (e: FormEvent) => { e.preventDefault(); saveLocal('messages', f); setDone(true); setF({ name: '', email: '', message: '' }); };
+  const [saveError, setSaveError] = useState('');
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (saveLocal('messages', f)) {
+      setDone(true);
+      setF({ name: '', email: '', message: '' });
+      setSaveError('');
+    } else {
+      setSaveError('This browser could not save your message. Check that local storage is available, then try again.');
+    }
+  };
   const field = 'mt-1 min-h-12 w-full border border-black bg-white p-3 text-base';
   return (
     <PageShell title="Contact" description="Contact Curvy Rails. This demo form saves your message in your browser only." heading="Contact" intro="Questions about sizing or the range? Drop us a line.">
@@ -16,6 +26,7 @@ export default function Contact() {
           <label className="block text-sm font-semibold">Message<textarea data-testid="input-message" required rows={5} className={field} value={f.message} onChange={(e) => setF({ ...f, message: e.target.value })} /></label>
           <button data-testid="button-send" className="h-12 w-full bg-black px-8 sm:w-auto text-xs font-bold uppercase tracking-widest text-white">Send (demo)</button>
           <p className="text-xs text-muted-foreground">Demo form: submissions are stored in your own browser and go nowhere.</p>
+          {saveError && <p role="alert" className="text-sm font-semibold text-red-800">{saveError}</p>}
         </form>
       )}
     </PageShell>

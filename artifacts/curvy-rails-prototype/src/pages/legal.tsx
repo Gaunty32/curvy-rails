@@ -22,7 +22,8 @@ export function Privacy() {
     <PageShell title="Privacy Policy" description="Privacy information for the Curvy Rails demo prototype: data is saved in your browser only." heading="Privacy policy">
       <P children={note} />
       <H children="This prototype" />
-      <P children="Basket, signups, contact messages and catalogue edits are saved in your own browser's local storage. They are not sent to a server, and there are no accounts, analytics or cookies for tracking. Clearing your browser data removes them." />
+      <P children="Basket, signup preview entries, contact messages and catalogue edits are saved in your own browser's local storage. Signup entries can include the required email address and phone number, optional first and last names and date of birth, plus separate email and SMS marketing choices. These details are not sent to a server; no email or SMS is sent, and no customer account or live subscription is created. Avoid entering real personal information in this demonstration. Clearing your browser data removes locally saved entries." />
+      <P children="The email and SMS choices on the signup preview are optional and unchecked by default. They are recorded only in this browser for demonstration and do not subscribe you to marketing." />
       <H children="Production site" />
       <P children="A full policy covering payments, fulfilment, CRM, accounts and analytics will be written before launch." />
     </PageShell>

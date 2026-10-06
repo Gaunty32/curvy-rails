@@ -55,7 +55,7 @@ export default function Home() {
           <RailsSteps />
         </div>
         <div className="flex flex-col justify-center border-black/20 md:border-l md:pl-8">
-          <p className="text-sm">Join The Rails, our loyalty scheme. Shop, earn, belong and unlock rewards as part of our growing community.</p>
+          <p className="text-sm">The Rails is our loyalty programme concept. Points, eligibility and rewards are still to be confirmed; nothing is tracked in this preview.</p>
           <Link href="/the-rails" className={`${btn} mt-4 w-fit border border-black`}>Discover the Rails <ArrowRight className="h-4 w-4" /></Link>
         </div>
       </section>
@@ -86,7 +86,7 @@ export default function Home() {
 
       <section className="bg-neutral-200">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-10 md:flex-row md:items-center md:justify-between md:px-8">
-          <div><h2 className="font-display text-3xl uppercase">Get on the Rails</h2><p className="text-sm">New drops, live sales and rewards. No nonsense.</p></div>
+          <div><h2 className="font-display text-3xl uppercase">Get on the Rails</h2><p className="text-sm">A community-first rewards idea, still taking shape.</p></div>
           <SignupForm />
         </div>
       </section>
@@ -95,7 +95,7 @@ export default function Home() {
 }
 
 export function RailsSteps() {
-  const steps = [[ShoppingBag, 'Shop', 'Grab your favourites'], [Star, 'Earn', 'Collect stars'], [Users, 'Belong', 'Be part of the community'], [Gift, 'Reward', 'Get treats and early access']] as const;
+  const steps = [[ShoppingBag, 'Shop', 'Across our channels'], [Star, 'Earn', 'Points: to be confirmed'], [Users, 'Belong', 'Be part of the community'], [Gift, 'Reward', 'Values: to be confirmed']] as const;
   return (
     <ol className="relative mt-8 grid grid-cols-4 gap-2 text-center">
       <div className="absolute left-[12%] right-[12%] top-6 border-t-2 border-dashed border-black" aria-hidden />

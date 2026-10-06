@@ -4,12 +4,17 @@ import { Menu, ShoppingBag, X } from 'lucide-react';
 import { SiFacebook, SiInstagram, SiTiktok, SiYoutube } from 'react-icons/si';
 import { Logo } from './logo';
 import { useBasket } from '@/data/basket';
+import { SignupModalProvider, useSignupModal } from '@/components/signup-modal';
 
 const NAV = [
-  ['Shop', '/shop'], ['T-Shirts', '/t-shirts'], ['Hoodies', '/hoodies'], ['Community', '/community'], ['Our Story', '/about'],
+  ['Shop', '/shop'], ['T-Shirts', '/t-shirts'], ['Hoodies', '/hoodies'], ['The Rails', '/the-rails'], ['Community', '/community'], ['Our Story', '/about'],
 ] as const;
 
 export function SiteLayout({ children }: { children: ReactNode }) {
+  return <SignupModalProvider><SiteLayoutContent>{children}</SiteLayoutContent></SignupModalProvider>;
+}
+
+function SiteLayoutContent({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [loc] = useLocation();
   const { count } = useBasket();
@@ -27,6 +32,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             {NAV.map(([l, h]) => <Link key={h} href={h} data-testid={`link-nav-${l.toLowerCase().replace(/\W/g, '')}`} className={loc === h ? 'underline underline-offset-8' : 'hover:underline underline-offset-8'}>{l}</Link>)}
           </nav>
           <div className="flex items-center gap-1">
+            <HeaderSignupButton />
             <Link href="/basket" data-testid="link-basket" aria-label={`Basket, ${count} items`} className="relative flex h-11 w-11 items-center justify-center">
               <ShoppingBag className="h-6 w-6" />
               <span data-testid="text-basket-count" className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-black px-1 text-[10px] font-bold text-white">{count}</span>
@@ -50,8 +56,9 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           <FooterCol title="Help" links={[['Delivery & Returns', '/delivery-returns'], ['Contact', '/contact'], ['Basket', '/basket']]} />
           <FooterCol title="Community" links={[['Our Story', '/about'], ['The Rails', '/the-rails'], ['Community', '/community']]} />
           <div>
-            <h4 className="mb-3 text-xs font-bold uppercase tracking-widest">Follow us</h4>
-            <div className="flex gap-6 text-xl" aria-label="Social (demo, not linked)"><SiTiktok /><SiInstagram /><SiFacebook /><SiYoutube /></div>
+            <h4 className="mb-3 text-xs font-bold uppercase tracking-widest">Stay in the loop</h4>
+            <SignupFooterButton />
+            <div className="mt-5 flex gap-6 text-xl" aria-label="Social (demo, not linked)"><SiTiktok /><SiInstagram /><SiFacebook /><SiYoutube /></div>
           </div>
         </div>
         <div className="safe-x safe-b border-t border-white/15 pt-4 text-xs text-neutral-400 md:px-8">
@@ -63,6 +70,14 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       </footer>
     </div>
   );
+}
+function HeaderSignupButton() {
+  const { openSignup } = useSignupModal();
+  return <button data-testid="button-header-signup" type="button" onClick={openSignup} className="inline-flex min-h-11 items-center bg-black px-2.5 text-[9px] font-extrabold uppercase tracking-widest text-white sm:px-4 sm:text-[10px]"><span className="sm:hidden">Join</span><span className="hidden sm:inline">Join The Rails</span></button>;
+}
+function SignupFooterButton() {
+  const { openSignup } = useSignupModal();
+  return <button data-testid="button-footer-signup" type="button" onClick={openSignup} className="min-h-11 border border-white/60 px-4 text-[10px] font-extrabold uppercase tracking-widest text-white hover:bg-white hover:text-black">Join The Rails</button>;
 }
 function FooterCol({ title, links }: { title: string; links: readonly (readonly [string, string])[] }) {
   return (

@@ -1,16 +1,11 @@
-import { useState, type FormEvent } from 'react';
-import { saveLocal } from '@/data/local-forms';
+import { ArrowRight } from 'lucide-react';
+import { useSignupModal } from '@/components/signup-modal';
 
-export function SignupForm({ dark = false }: { dark?: boolean }) {
-  const [email, setEmail] = useState('');
-  const [done, setDone] = useState(false);
-  const submit = (e: FormEvent) => { e.preventDefault(); saveLocal('signups', { email }); setDone(true); setEmail(''); };
-  if (done) return <p data-testid="text-signup-done" className="text-sm font-semibold">Saved in this browser only (demo). No email has been sent or stored on a server.</p>;
+export function SignupForm() {
+  const { openSignup } = useSignupModal();
   return (
-    <form onSubmit={submit} className="flex w-full max-w-md flex-col gap-2 sm:flex-row">
-      <input data-testid="input-signup-email" required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Your email address" aria-label="Email address"
-        className={`h-12 min-w-0 flex-1 border px-3 text-base ${dark ? 'bg-white text-black' : 'bg-white'}`} />
-      <button data-testid="button-signup" className="h-12 bg-black px-6 text-sm font-bold uppercase tracking-wide text-white">Join</button>
-    </form>
+    <button data-testid="button-signup" type="button" onClick={openSignup} className="inline-flex min-h-12 w-full max-w-md items-center justify-center gap-2 bg-black px-6 text-sm font-bold uppercase tracking-wide text-white transition-transform hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black sm:w-auto">
+      Join The Rails <ArrowRight aria-hidden="true" className="h-4 w-4" />
+    </button>
   );
 }
