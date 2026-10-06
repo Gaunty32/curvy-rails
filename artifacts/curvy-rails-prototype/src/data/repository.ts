@@ -38,7 +38,12 @@ function read(): Product[] {
     const normalized = items.map((p) => ({
       ...p,
       price: PRODUCT_PRICES[p.category],
-      description: p.id === FIRST_PRODUCT.id ? p.description.replace(/ Price(?: and sizes are demonstration values| is a demonstration value) pending confirmation\.$/, '') : p.description,
+      variants: p.id === FIRST_PRODUCT.id && !p.variants?.length
+        ? FIRST_PRODUCT.variants?.map((v) => v.colour === p.colour ? { ...v, image: p.image, images: p.images ?? [p.image] } : { ...v })
+        : p.variants,
+      description: p.id === FIRST_PRODUCT.id
+        ? p.description.replace(/ Price(?: and sizes are demonstration values| is a demonstration value) pending confirmation\.$/, '').replace(/^A white T-shirt featuring our “Patience Sold Separately” design/, 'A T-shirt available in Black or White, featuring our “Patience Sold Separately” design')
+        : p.description,
       sizes: [...new Set(p.sizes.map(normalizeSize))],
     }));
     if (raw && JSON.stringify(normalized) !== JSON.stringify(items)) {
@@ -58,7 +63,7 @@ export const localProductRepository: ProductRepository = {
   save(p) {
     const items = read();
     const i = items.findIndex((x) => x.id === p.id);
-    const priced = { ...p, price: PRODUCT_PRICES[p.category] };
+    const priced = { ...p, price: PRODUCT_PRICES[p.category], variants: p.variants?.map((v) => v.colour === p.colour ? { ...v, image: p.image, images: [...new Set([p.image, ...(p.images ?? [])])] } : v) };
     return write(i >= 0 ? items.map((x) => (x.id === p.id ? priced : x)) : [...items, priced]);
   },
   remove: (id) => write(read().filter((x) => x.id !== id)),

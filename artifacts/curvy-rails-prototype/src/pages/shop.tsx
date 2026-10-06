@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { usePageHead } from '@/lib/use-page-head';
 import { useProducts } from '@/data/catalogue';
 import { ProductCard } from '@/components/product-card';
-import { ALL_SIZES, type Category } from '@/data/types';
+import { ALL_SIZES, productColours, type Category, type ProductColour } from '@/data/types';
 
 const META = {
   all: ['Shop all', 'Browse every Curvy Rails T-shirt and hoodie in sizes 16-32. Demo catalogue.', 'Shop all'],
@@ -19,7 +19,7 @@ export default function Shop({ category }: { category?: Category }) {
   const [colour, setColour] = useState('');
   const [sort, setSort] = useState('featured');
   const list = useMemo(() => {
-    const r = products.filter((p) => (!category || p.category === category) && (!size || p.sizes.includes(size)) && (!colour || p.colour === colour) && p.name.toLowerCase().includes(q.toLowerCase().trim()));
+    const r = products.filter((p) => (!category || p.category === category) && (!size || p.sizes.includes(size)) && (!colour || productColours(p).includes(colour as ProductColour)) && p.name.toLowerCase().includes(q.toLowerCase().trim()));
     if (sort === 'low') r.sort((a, b) => a.price - b.price);
     if (sort === 'high') r.sort((a, b) => b.price - a.price);
     return r;
@@ -47,7 +47,7 @@ export default function Shop({ category }: { category?: Category }) {
           <button className="mt-3 min-h-11 px-3 underline" onClick={() => { setQ(''); setSize(''); setColour(''); }}>Clear filters</button>
         </div>
       ) : (
-        <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">{list.map((p) => <ProductCard key={p.id} product={p} />)}</div>
+        <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">{list.map((p) => <ProductCard key={`${p.id}-${colour}`} product={p} initialColour={colour ? colour as ProductColour : undefined} />)}</div>
       )}
     </div>
   );

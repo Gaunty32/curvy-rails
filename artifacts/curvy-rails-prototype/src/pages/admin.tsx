@@ -2,7 +2,7 @@ import { useState, type ChangeEvent } from 'react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { usePageHead } from '@/lib/use-page-head';
 import { asset, catalogue, gbp, sizeRange, useProducts } from '@/data/catalogue';
-import { ALL_SIZES, PRODUCT_PRICES, type Product } from '@/data/types';
+import { ALL_SIZES, PRODUCT_PRICES, productForColour, type Product } from '@/data/types';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
@@ -92,9 +92,10 @@ export default function Admin() {
               <label className="block font-semibold">Name<input data-testid="input-product-name" className={field} value={editing.name} onChange={(e) => set({ name: e.target.value })} /></label>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <label className="font-semibold">Type<select className={field} value={editing.category} onChange={(e) => { const category = e.target.value as Product['category']; set({ category, price: PRODUCT_PRICES[category] }); }}><option value="tshirt">T-Shirt</option><option value="hoodie">Hoodie</option></select></label>
-                <label className="font-semibold">Colour<select className={field} value={editing.colour} onChange={(e) => set({ colour: e.target.value as Product['colour'] })}><option>Black</option><option>White</option></select></label>
+                <label className="font-semibold">Colour<select className={field} value={editing.colour} onChange={(e) => { const colour = e.target.value as Product['colour']; const variant = productForColour(editing, colour); set({ colour, image: variant.image, images: variant.images }); }}><option>Black</option><option>White</option></select></label>
                 <label className="font-semibold">Price (£, incl. VAT)<input data-testid="input-product-price" type="number" readOnly className={field} value={PRODUCT_PRICES[editing.category]} /><span className="mt-1 block text-xs font-normal text-muted-foreground">Set by product type: tees £20, hoodies £35.</span></label>
               </div>
+              {editing.variants && <p className="text-xs text-muted-foreground">This sets the default display colour. Image edits apply to this colour only; the other colour’s images are preserved.</p>}
               <div><p className="font-semibold">Sizes</p>
                 <div className="mt-1 flex flex-wrap gap-2">{ALL_SIZES.map((s) => { const on = editing.sizes.includes(s); return <button key={s} type="button" aria-pressed={on} onClick={() => set({ sizes: on ? editing.sizes.filter((x) => x !== s) : [...editing.sizes, s].sort() })} className={`h-11 min-w-24 px-3 border border-black ${on ? 'bg-black text-white' : ''}`}>{s}</button>; })}</div>
               </div>

@@ -4,24 +4,29 @@ import { ArrowRight, Heart } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { asset, gbp, sizeRange } from '@/data/catalogue';
 import { useBasket } from '@/data/basket';
-import type { Product } from '@/data/types';
+import { productColours, productForColour, type Product, type ProductColour } from '@/data/types';
 import { SizePicker } from './size-picker';
+import { ColourPicker } from './colour-picker';
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({ product, initialColour }: { product: Product; initialColour?: ProductColour }) {
   const [open, setOpen] = useState(false);
   const [size, setSize] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
   const basket = useBasket();
+  const colours = productColours(product);
+  const [colour, setColour] = useState<ProductColour>(initialColour ?? product.colour);
+  const variant = productForColour(product, colour);
   return (
     <article data-testid={`card-product-${product.id}`} className="group">
-      <Link href={`/products/${product.slug}`} className="relative block aspect-square overflow-hidden bg-secondary">
-        <img src={asset(product.image)} alt={product.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+      <Link href={`/products/${product.slug}?colour=${colour}`} className="relative block aspect-square overflow-hidden bg-secondary">
+        <img src={asset(variant.image)} alt={`${product.name} — ${colour}`} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
         <span aria-hidden className="absolute right-2 top-2 rounded-full bg-white/90 p-1.5"><Heart className="h-4 w-4" /></span>
         {(product.placeholder || product.mockup) && <span className="absolute bottom-2 left-2 bg-black/80 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">{product.mockup ? 'Product mock-up' : 'Placeholder'}</span>}
       </Link>
       <h3 className="mt-3 text-sm font-bold leading-snug">{product.name}</h3>
       <p className="text-sm font-semibold">{gbp(product.price)} <span className="text-[11px] font-normal text-muted-foreground">incl. VAT</span></p>
       <p className="text-xs text-muted-foreground">Sizes {sizeRange(product.sizes)}</p>
+      {colours.length > 1 && <p className="mt-1 text-xs font-semibold">{colours.join(' / ')}</p>}
       <button data-testid={`button-quickshop-${product.id}`} onClick={() => { setSize(null); setAdded(false); setOpen(true); }}
         className="mt-2 flex h-11 w-full items-center justify-center gap-2 bg-black text-xs font-bold uppercase tracking-widest text-white hover:bg-neutral-800">
         Quick shop <ArrowRight className="h-4 w-4" />
@@ -32,9 +37,12 @@ export function ProductCard({ product }: { product: Product }) {
             <DialogTitle className="font-display text-xl uppercase">{product.name}</DialogTitle>
             <DialogDescription>{gbp(product.price)} including VAT — {product.mockup ? 'product mock-up' : product.placeholder ? 'demo placeholder product' : 'demo product'}</DialogDescription>
           </DialogHeader>
+          <img src={asset(variant.image)} alt={`${product.name} — ${colour}`} className="mx-auto h-44 w-44 object-cover" />
+          <p className="text-xs font-bold uppercase tracking-widest">Colour: {colour}</p>
+          <ColourPicker colours={colours} value={colour} onChange={(next) => { setColour(next); setAdded(false); }} />
           <SizePicker sizes={product.sizes} value={size} onChange={setSize} />
           <button data-testid={`button-quickshop-add-${product.id}`} disabled={!size}
-            onClick={() => { if (size) { basket.add(product.id, size); setAdded(true); } }}
+            onClick={() => { if (size) { basket.add(product.id, size, 1, colour); setAdded(true); } }}
             className="h-11 bg-black text-sm font-bold uppercase tracking-widest text-white disabled:opacity-40">
             {size ? 'Add to basket' : 'Choose a size'}
           </button>

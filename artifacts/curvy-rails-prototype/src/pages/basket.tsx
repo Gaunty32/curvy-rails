@@ -26,18 +26,18 @@ export default function BasketPage() {
         <div className="mt-6 grid gap-8 md:mt-8 md:grid-cols-[1.6fr_1fr] md:gap-10">
           <ul className="divide-y border-y">
             {b.lines.map((l) => (
-              <li key={`${l.product.id}-${l.size}`} data-testid={`row-basket-${l.product.id}-${l.size}`} className="flex gap-3 py-4 sm:gap-4">
+              <li key={`${l.product.id}-${l.size}-${l.product.colour}`} data-testid={`row-basket-${l.product.id}-${l.size}-${l.product.colour.toLowerCase()}`} className="flex gap-3 py-4 sm:gap-4">
                 <img src={asset(l.product.image)} alt="" loading="lazy" className="h-20 w-20 shrink-0 object-cover sm:h-24 sm:w-24" />
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
-                  <Link href={`/products/${l.product.slug}`} className="text-sm font-bold">{l.product.name}</Link>
-                  <p className="text-xs text-muted-foreground">Size {l.size} &middot; {gbp(l.product.price)}</p>
+                  <Link href={`/products/${l.product.slug}?colour=${l.product.colour}`} className="text-sm font-bold">{l.product.name}</Link>
+                  <p className="text-xs text-muted-foreground">{l.product.colour} &middot; Size {l.size} &middot; {gbp(l.product.price)} incl. VAT</p>
                   <div className="mt-auto flex flex-wrap items-center gap-2">
                     <div className="flex h-11 items-center border border-black text-sm">
-                      <button aria-label="Fewer" className="h-full w-11" onClick={() => b.setQty(l.product.id, l.size, l.qty - 1)}>-</button>
-                      <span className="w-6 text-center" data-testid={`text-line-qty-${l.product.id}-${l.size}`}>{l.qty}</span>
-                      <button aria-label="More" className="h-full w-11" onClick={() => b.setQty(l.product.id, l.size, l.qty + 1)}>+</button>
+                      <button aria-label="Fewer" className="h-full w-11" onClick={() => b.setQty(l.product.id, l.size, l.qty - 1, l.product.colour)}>-</button>
+                      <span className="w-6 text-center" data-testid={`text-line-qty-${l.product.id}-${l.size}-${l.product.colour.toLowerCase()}`}>{l.qty}</span>
+                      <button aria-label="More" className="h-full w-11" onClick={() => b.setQty(l.product.id, l.size, l.qty + 1, l.product.colour)}>+</button>
                     </div>
-                    <button data-testid={`button-remove-${l.product.id}-${l.size}`} aria-label={`Remove ${l.product.name} size ${l.size}`} className="flex h-11 w-11 items-center justify-center" onClick={() => b.remove(l.product.id, l.size)}><Trash2 className="h-4 w-4" /></button>
+                    <button data-testid={`button-remove-${l.product.id}-${l.size}-${l.product.colour.toLowerCase()}`} aria-label={`Remove ${l.product.colour} ${l.product.name} size ${l.size}`} className="flex h-11 w-11 items-center justify-center" onClick={() => b.remove(l.product.id, l.size, l.product.colour)}><Trash2 className="h-4 w-4" /></button>
                   </div>
                 </div>
                 <p className="text-sm font-bold">{gbp(l.product.price * l.qty)}</p>

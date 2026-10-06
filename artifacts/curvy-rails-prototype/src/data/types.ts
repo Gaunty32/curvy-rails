@@ -1,19 +1,35 @@
 export type Category = 'tshirt' | 'hoodie';
+export type ProductColour = 'Black' | 'White';
+export interface ProductVariant {
+  colour: ProductColour;
+  image: string;
+  images: string[];
+  /** Production artwork for this colour, separate from the garment mock-ups. */
+  artwork?: string;
+}
 export const PRODUCT_PRICES: Record<Category, number> = { tshirt: 20, hoodie: 35 };
 export interface Product {
   id: string;
   slug: string;
   name: string;
   category: Category;
-  colour: 'Black' | 'White';
+  colour: ProductColour;
   price: number;
   sizes: string[];
   description: string;
   image: string;
   images?: string[];
+  variants?: ProductVariant[];
   mockup?: boolean;
   /** Demo flag: placeholder imagery that the real catalogue will replace. */
   placeholder: boolean;
+}
+export function productColours(product: Product): ProductColour[] {
+  return product.variants?.length ? product.variants.map((v) => v.colour) : [product.colour];
+}
+export function productForColour(product: Product, colour: ProductColour): Product {
+  const variant = product.variants?.find((v) => v.colour === colour);
+  return variant ? { ...product, colour: variant.colour, image: variant.image, images: variant.images } : product;
 }
 export const ALL_SIZES = ['16-24', '26-32'];
 /** Upgrade old individual UK sizes to the brand's two size options. */

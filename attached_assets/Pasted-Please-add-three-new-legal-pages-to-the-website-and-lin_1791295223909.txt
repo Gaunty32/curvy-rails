@@ -1,0 +1,454 @@
+Please add three new legal pages to the website and link them clearly in the website footer:
+
+1. /returns
+   Page title: Returns & Refunds
+
+2. /terms
+   Page title: Terms & Conditions
+
+3. /privacy
+   Page title: Privacy Policy
+
+These policies are for a UK-based ecommerce website selling clothing to consumers.
+
+Use the existing website styling, typography, header and footer. Make the pages clean, professional, mobile responsive and easy to read.
+
+Do not invent company details. Where company name, trading address, registered company number, VAT number, contact email or other legal details are required, use existing verified website/business configuration if available. Otherwise insert clearly marked placeholders for me to complete.
+
+--------------------------------------------------
+RETURNS & REFUNDS POLICY
+--------------------------------------------------
+
+Create the following policy in clear, customer-friendly UK English.
+
+RETURNS & REFUNDS
+
+We hope you love your order, but if you change your mind you have the right to cancel and return most items purchased online.
+
+14-DAY RIGHT TO CANCEL
+
+You have 14 days from the day after you receive your order to tell us that you wish to cancel your order.
+
+If an order contains multiple items delivered separately, the 14-day cancellation period starts from the day after you receive the final item.
+
+You do not need to give us a reason for cancelling.
+
+Once you have told us that you wish to cancel, you then have 14 days to return the goods to us.
+
+HOW TO MAKE A RETURN
+
+To request a return, contact us using the contact details shown on this website and provide:
+
+- Your name
+- Order number
+- The item(s) you wish to return
+
+We will then provide the appropriate return instructions and return address.
+
+Please do not send goods to us without following the return instructions.
+
+CONDITION OF RETURNED ITEMS
+
+You may inspect and try on clothing in the same way that you reasonably would in a shop.
+
+Returned items should, wherever possible:
+
+- Be unworn other than for trying on
+- Be unwashed
+- Have their original tags attached
+- Be returned with their original packaging where reasonably possible
+- Be free from marks, odours, pet hair or other damage
+
+If an item has been handled beyond what is reasonably necessary to establish its nature, characteristics and fit, and this has reduced its value, we may make an appropriate deduction from the refund where permitted by law.
+
+RETURN POSTAGE
+
+Unless the product is faulty, damaged, incorrect or not as described, you are responsible for the cost of returning the goods to us.
+
+We recommend using a tracked postal service and keeping proof of postage until your refund has been completed.
+
+If we have supplied an incorrect, faulty, damaged or misdescribed item, please contact us before returning it so that we can arrange the appropriate return method.
+
+REFUNDS
+
+Once we receive the returned goods, or you provide satisfactory evidence that they have been sent back, we will process the refund in accordance with your statutory rights.
+
+Refunds will normally be made using the same payment method used for the original purchase.
+
+Where you cancel the entire order under your statutory cancellation rights, we will also refund the cost of our standard delivery option. If you chose a more expensive delivery service, such as express delivery, we are not required to refund the additional delivery cost above our standard delivery charge.
+
+PERSONALISED AND CUSTOM-MADE ITEMS
+
+The statutory right to cancel does not normally apply to goods that have been made to your specification or clearly personalised.
+
+This includes, for example:
+
+- Clothing printed with a personalised name
+- Clothing embroidered with a personalised name
+- Bespoke wording or designs requested by the customer
+- Items manufactured or altered specifically to the customer's individual requirements
+
+This exclusion does not affect your rights where personalised goods are faulty, damaged, incorrectly supplied or not as described.
+
+FAULTY GOODS
+
+Your statutory rights are not affected by this returns policy.
+
+If an item is faulty, damaged, not as described or otherwise does not meet the requirements of UK consumer law, please contact us as soon as possible.
+
+Nothing in this policy limits your rights under the Consumer Rights Act 2015 or other applicable UK consumer legislation.
+
+--------------------------------------------------
+TERMS & CONDITIONS
+--------------------------------------------------
+
+Create comprehensive ecommerce Terms & Conditions using the following content and structure.
+
+TERMS & CONDITIONS
+
+These Terms & Conditions apply when you use this website or purchase products from us.
+
+1. ABOUT US
+
+Display the verified legal business details from the website configuration.
+
+Include:
+- Legal/trading name
+- Registered or trading address
+- Company registration number if applicable
+- VAT registration number if applicable
+- Contact email
+
+Do not invent any missing details.
+
+2. USING OUR WEBSITE
+
+You may use this website for lawful purposes only.
+
+You must not misuse the website, attempt to gain unauthorised access, introduce malicious software, interfere with the operation of the website or use it for fraudulent purposes.
+
+3. PRODUCTS
+
+We make reasonable efforts to ensure product descriptions, photographs, colours, sizes and specifications are accurate.
+
+Colours may appear slightly differently depending on screens and devices.
+
+Measurements and sizing information may be approximate and customers should consult the relevant size guide before ordering.
+
+4. PRICES
+
+All prices will be displayed clearly on the website.
+
+State whether prices include VAT based upon the website/business configuration. Do not invent this.
+
+Delivery charges, where applicable, will be shown during checkout before the customer places their order.
+
+5. PLACING AN ORDER
+
+Customers should check their order carefully before completing checkout.
+
+After an order is placed, we will normally send an electronic acknowledgement.
+
+An acknowledgement of an order does not necessarily mean that we have accepted it.
+
+A contract is formed when we accept the order, normally by confirming that the order has been accepted or dispatched.
+
+We reserve the right to refuse or cancel an order where there has been an obvious pricing error, the product is unavailable, payment cannot be authorised, fraud is suspected or we cannot fulfil the order for another legitimate reason.
+
+If payment has already been taken for an order we cannot fulfil, it will be refunded.
+
+6. PAYMENT
+
+Payment must be made using one of the payment methods offered during checkout.
+
+Payments may be processed by third-party payment providers.
+
+We do not intentionally store complete payment card details on our own website where payments are processed securely by a third-party payment provider.
+
+7. DELIVERY
+
+Available delivery options and charges are displayed during checkout.
+
+Any delivery dates or times shown are estimates unless expressly stated otherwise.
+
+Customers are responsible for providing an accurate and complete delivery address.
+
+Nothing in these terms affects statutory consumer rights relating to delivery.
+
+8. RETURNS AND CANCELLATIONS
+
+Our Returns & Refunds Policy forms part of these Terms & Conditions.
+
+Include a prominent link to /returns.
+
+Customers purchasing online normally have a statutory right to cancel eligible purchases within 14 days after receiving the goods, subject to applicable exclusions including certain personalised or bespoke goods.
+
+9. PERSONALISED PRODUCTS
+
+Customers are responsible for checking spelling, names, wording, colours, sizes and other personalised information submitted when ordering.
+
+Where we manufacture a product according to information supplied by the customer, we are not responsible for errors contained in information supplied or approved by the customer.
+
+This does not affect rights relating to manufacturing faults or errors made by us.
+
+10. INTELLECTUAL PROPERTY
+
+The website and its content, including branding, graphics, photographs, text and website design, are protected by applicable intellectual property laws.
+
+Content belonging to us may not be reproduced commercially without permission.
+
+Where a customer supplies a logo, image, wording or design for personalisation, they confirm that they have the necessary rights or permission for us to reproduce it for their order.
+
+11. PROMOTIONAL CODES
+
+Promotional codes may have specific conditions, expiry dates or product restrictions.
+
+Unless expressly stated otherwise, promotional codes cannot be exchanged for cash and cannot normally be combined with other offers.
+
+12. LIABILITY
+
+Nothing in these Terms excludes or limits liability where it would be unlawful to do so, including liability for death or personal injury caused by negligence, fraud or fraudulent misrepresentation.
+
+We are not responsible for losses that were not reasonably foreseeable when the contract was formed.
+
+Products sold to consumers are intended for personal use unless otherwise stated, and we are not responsible for business losses arising from a consumer purchase where permitted by law.
+
+13. PRIVACY
+
+Personal information is handled in accordance with our Privacy Policy.
+
+Include a link to /privacy.
+
+14. CHANGES TO THESE TERMS
+
+We may update these Terms & Conditions from time to time.
+
+The terms applying to an order will normally be those in force when the order was placed.
+
+Display a "Last updated" date at the top of the page.
+
+15. GOVERNING LAW
+
+These Terms are governed by the laws of England and Wales.
+
+Consumers will retain any mandatory rights they have to bring proceedings in the courts applicable to where they live within the United Kingdom.
+
+--------------------------------------------------
+PRIVACY POLICY
+--------------------------------------------------
+
+Create a UK GDPR-style Privacy Policy.
+
+PRIVACY POLICY
+
+We take your privacy seriously. This policy explains what personal information we collect, why we collect it, how it is used and your rights.
+
+1. WHO WE ARE
+
+Display the verified business details already held in the website configuration.
+
+Identify the business as the data controller where appropriate.
+
+Provide the contact email for privacy enquiries.
+
+Do not invent missing information.
+
+2. INFORMATION WE COLLECT
+
+Depending on how customers use the website, we may collect:
+
+- Name
+- Billing address
+- Delivery address
+- Email address
+- Telephone number
+- Account/login information
+- Order history
+- Products purchased
+- Personalisation details submitted with an order
+- Customer service communications
+- Payment transaction information
+- IP address
+- Device and browser information
+- Website usage information
+- Marketing preferences
+- Cookie and analytics information
+
+Do not state that we store full payment card details unless the application actually does so.
+
+3. WHY WE USE PERSONAL INFORMATION
+
+We may process personal information to:
+
+- Process and fulfil orders
+- Take and administer payments
+- Deliver products
+- Manage returns and refunds
+- Provide customer support
+- Maintain customer accounts
+- Prevent fraud and misuse
+- Meet accounting, tax and legal obligations
+- Improve the website and customer experience
+- Send marketing communications where legally permitted
+- Measure website performance and marketing effectiveness where permitted
+
+4. LEGAL BASES
+
+Explain in plain English that we rely on appropriate lawful bases including:
+
+- Performance of a contract
+- Compliance with legal obligations
+- Legitimate interests
+- Consent, where required
+
+Do not imply that consent is the legal basis for every type of processing.
+
+5. PAYMENT INFORMATION
+
+If the website uses a third-party payment processor such as Stripe, automatically use the actual integration configured on the website and name it accurately.
+
+Explain that payment information may be sent directly to the payment processor and that we generally do not receive or store complete card numbers.
+
+Do not mention Stripe unless Stripe is actually used.
+
+6. DELIVERY AND FULFILMENT
+
+Explain that necessary personal information may be shared with delivery companies, fulfilment providers and other service providers in order to complete orders.
+
+If the website is actually integrated with a named delivery or shipping platform, it may be named here.
+
+7. OTHER SERVICE PROVIDERS
+
+We may use trusted third-party suppliers for services such as:
+
+- Website hosting
+- Payment processing
+- Delivery
+- Email
+- Customer relationship management
+- Analytics
+- Marketing
+- IT and security
+- Accounting
+
+Only name specific third-party services if they are actually configured or used by the website.
+
+Explain that providers receive only information reasonably necessary to provide their services and are required to handle information appropriately.
+
+8. INTERNATIONAL TRANSFERS
+
+Where personal information is processed outside the UK, explain that appropriate safeguards will be used where required by UK data protection law.
+
+Do not claim that all data remains within the UK unless this has been verified.
+
+9. DATA RETENTION
+
+Explain that personal information is retained only for as long as reasonably necessary for the purpose for which it was collected and to satisfy legal, accounting, tax, fraud prevention and regulatory requirements.
+
+Order and transaction information may need to be retained for longer periods to comply with legal and accounting obligations.
+
+10. MARKETING
+
+Where customers have opted in, or where otherwise permitted by law, we may send information about products, offers or news.
+
+Customers can unsubscribe at any time using the unsubscribe link in marketing emails or by contacting us.
+
+Unsubscribing from marketing does not prevent necessary transactional messages relating to orders or accounts.
+
+11. COOKIES
+
+Explain that the website may use essential cookies necessary for the operation of the site.
+
+Where analytics, advertising or other non-essential cookies or similar technologies are used, these should be controlled through the site's cookie consent mechanism where required.
+
+Add a link to the website's cookie settings if such functionality exists.
+
+Do not automatically enable non-essential analytics or advertising cookies before consent where consent is legally required.
+
+12. CUSTOMER RIGHTS
+
+Explain that under UK data protection law individuals may have rights including:
+
+- Access to personal information
+- Correction of inaccurate information
+- Erasure in certain circumstances
+- Restriction of processing
+- Objection to certain processing
+- Data portability in applicable circumstances
+- Withdrawal of consent where processing is based on consent
+
+Explain that customers can contact us to exercise these rights.
+
+13. COMPLAINTS
+
+Explain that customers should contact us first if they have concerns about how their information is handled.
+
+They also have the right to complain to the Information Commissioner's Office (ICO).
+
+Include a link to the official ICO website.
+
+14. SECURITY
+
+Explain that reasonable technical and organisational measures are used to protect personal information.
+
+Do not make absolute statements such as "your data is completely secure" or "we guarantee your data can never be breached."
+
+15. CHANGES TO THIS POLICY
+
+We may update this Privacy Policy periodically.
+
+Display the current "Last updated" date at the top of the policy.
+
+--------------------------------------------------
+FOOTER
+--------------------------------------------------
+
+Add a LEGAL section to the website footer containing:
+
+Returns & Refunds
+Terms & Conditions
+Privacy Policy
+Cookie Settings (if the website has a cookie consent manager)
+
+Ensure all links work on desktop and mobile.
+
+--------------------------------------------------
+CHECKOUT
+--------------------------------------------------
+
+At checkout:
+
+1. Make Terms & Conditions and Returns & Refunds easily accessible before the customer places the order.
+
+2. Add appropriate wording such as:
+"By placing your order, you agree to our Terms & Conditions and acknowledge our Returns & Refunds Policy."
+
+Link both policy names to their respective pages.
+
+3. Do not use the checkout acceptance of Terms & Conditions as consent to marketing.
+
+4. Any marketing opt-in must be separate and optional.
+
+5. Ensure the final checkout button clearly communicates that placing the order creates an obligation to pay.
+
+--------------------------------------------------
+IMPORTANT
+--------------------------------------------------
+
+Do not simply create placeholder pages.
+
+Implement all three pages, routes, footer links and checkout links.
+
+Check the existing application's company details, payment provider, analytics, cookies, CRM, email, delivery and other integrations before finalising the Privacy Policy so that it accurately describes the services actually being used.
+
+Do not invent integrations or company information.
+
+After implementation, report back:
+
+1. URLs of all three pages
+2. Company details used
+3. Third-party services mentioned in the Privacy Policy
+4. Any missing legal/business information that I need to provide
+5. Any cookie/tracking services detected
+6. Whether non-essential cookies are currently blocked until consent
+7. What changes were made to checkout

@@ -19,9 +19,13 @@ export const FIRST_PRODUCT: Product = {
   colour: 'White',
   price: PRODUCT_PRICES.tshirt,
   sizes: [...ALL_SIZES],
-  description: 'A white T-shirt featuring our “Patience Sold Separately” design, with a skeleton hand, crescent moon, pink roses and a moth. Available in two size options: 16-24 and 26-32. Supplied product mock-ups show the design on its own and worn by a model.',
+  description: 'Our “Patience Sold Separately” T-shirt, available in Black or White. The white option has the black-and-pink design; the black option has the cream-and-pink version. Available in two size options: 16-24 and 26-32. View the flat shot and model mock-up for each colour.',
   image: 'assets/patience-sold-separately.webp',
   images: ['assets/patience-sold-separately.webp', 'assets/patience-sold-separately-model.webp'],
+  variants: [
+    { colour: 'White', image: 'assets/patience-sold-separately.webp', images: ['assets/patience-sold-separately.webp', 'assets/patience-sold-separately-model.webp'] },
+    { colour: 'Black', image: 'assets/patience-sold-separately-black.webp', images: ['assets/patience-sold-separately-black.webp', 'assets/patience-sold-separately-black-model.webp'], artwork: 'assets/patience-sold-separately-cream-artwork.png' },
+  ],
   placeholder: false,
   mockup: true,
 };
