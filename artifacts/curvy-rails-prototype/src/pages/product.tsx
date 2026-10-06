@@ -32,6 +32,7 @@ export default function ProductPage() {
           <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{CATEGORY_LABEL[p.category]} &middot; {p.colour}</p>
           <h1 data-testid="text-product-name" className="font-display mt-2 text-3xl uppercase sm:text-4xl md:text-5xl">{p.name}</h1>
           <p data-testid="text-product-price" className="mt-3 text-2xl font-bold">{gbp(p.price)}</p>
+          <p className="mt-1 text-xs text-muted-foreground">Includes VAT</p>
           <p className="mt-4 leading-relaxed">{p.description}</p>
           <p className="mt-6 mb-2 text-xs font-bold uppercase tracking-widest">UK size</p>
           <SizePicker sizes={p.sizes} value={size} onChange={setSize} />
@@ -46,7 +47,9 @@ export default function ProductPage() {
           </div>
           {added && <p className="mt-3 text-sm font-semibold">Added to basket. <Link href="/basket" className="underline">View basket</Link></p>}
           <ul className="mt-8 space-y-1 border-t pt-4 text-sm text-muted-foreground">
-            <li>Free UK delivery over £50, otherwise £3.99</li><li>Returns info on our <Link href="/delivery-returns" className="underline">Delivery &amp; Returns</Link> page</li>
+            <li>UK mainland delivery: £3.99 including VAT, free on orders over £50.</li>
+            <li>Outside UK mainland: orders accepted; shipping quoted separately.</li>
+            <li>Returns info on our <Link href="/delivery-returns" className="underline">Delivery &amp; Returns</Link> page</li>
           </ul>
         </div>
       </div>

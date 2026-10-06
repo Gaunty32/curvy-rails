@@ -23,7 +23,7 @@ export default function Home() {
             <Link href="/about" className={`${btn} border border-black bg-white`}>Our story</Link>
           </div>
           <ul className="mt-8 flex flex-wrap gap-x-8 gap-y-3 text-[11px] font-bold uppercase tracking-wider">
-            <li className="flex items-center gap-2"><Truck className="h-5 w-5" /> Free UK delivery over £50</li>
+            <li className="flex items-center gap-2"><Truck className="h-5 w-5" /> Free UK mainland delivery over £50</li>
             <li className="flex items-center gap-2"><Shirt className="h-5 w-5" /> Sizes 16-32</li>
             <li className="flex items-center gap-2"><Heart className="h-5 w-5" /> Real people. Real curves.</li>
           </ul>

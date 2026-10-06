@@ -1,4 +1,4 @@
-import { ALL_SIZES, type Product } from './types';
+import { ALL_SIZES, PRODUCT_PRICES, type Product } from './types';
 
 const tee = 'Heavyweight cotton tee cut generously through the body, with room at the bust, hip and arm. Printed graphic, pre-washed, made for sizes 16-32.';
 const hood = 'Brushed-back fleece hoodie with a roomy hood, longer body and sleeves that actually reach. Printed graphic, made for sizes 16-32.';
@@ -6,7 +6,7 @@ const mk = (n: number, name: string, category: 'tshirt' | 'hoodie', colour: 'Bla
   id: `p${n}`,
   slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
   name, category, colour,
-  price: category === 'tshirt' ? 24 : 38,
+  price: PRODUCT_PRICES[category],
   sizes: [...ALL_SIZES],
   description, image: `assets/${img}.jpg`, placeholder: true,
 });
@@ -17,9 +17,9 @@ export const FIRST_PRODUCT: Product = {
   name: 'Patience Sold Separately T-Shirt',
   category: 'tshirt',
   colour: 'White',
-  price: 24,
+  price: PRODUCT_PRICES.tshirt,
   sizes: [...ALL_SIZES],
-  description: 'A white T-shirt featuring our “Patience Sold Separately” design, with a skeleton hand, crescent moon, pink roses and a moth. Available in two size options: 16-24 and 26-32. Supplied product mock-ups show the design on its own and worn by a model. Price is a demonstration value pending confirmation.',
+  description: 'A white T-shirt featuring our “Patience Sold Separately” design, with a skeleton hand, crescent moon, pink roses and a moth. Available in two size options: 16-24 and 26-32. Supplied product mock-ups show the design on its own and worn by a model.',
   image: 'assets/patience-sold-separately.webp',
   images: ['assets/patience-sold-separately.webp', 'assets/patience-sold-separately-model.webp'],
   placeholder: false,

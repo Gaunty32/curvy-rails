@@ -20,7 +20,7 @@ export function ProductCard({ product }: { product: Product }) {
         {(product.placeholder || product.mockup) && <span className="absolute bottom-2 left-2 bg-black/80 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">{product.mockup ? 'Product mock-up' : 'Placeholder'}</span>}
       </Link>
       <h3 className="mt-3 text-sm font-bold leading-snug">{product.name}</h3>
-      <p className="text-sm font-semibold">{gbp(product.price)}</p>
+      <p className="text-sm font-semibold">{gbp(product.price)} <span className="text-[11px] font-normal text-muted-foreground">incl. VAT</span></p>
       <p className="text-xs text-muted-foreground">Sizes {sizeRange(product.sizes)}</p>
       <button data-testid={`button-quickshop-${product.id}`} onClick={() => { setSize(null); setAdded(false); setOpen(true); }}
         className="mt-2 flex h-11 w-full items-center justify-center gap-2 bg-black text-xs font-bold uppercase tracking-widest text-white hover:bg-neutral-800">
@@ -30,7 +30,7 @@ export function ProductCard({ product }: { product: Product }) {
         <DialogContent className="max-h-[90dvh] w-[calc(100vw-2rem)] max-w-md overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display text-xl uppercase">{product.name}</DialogTitle>
-            <DialogDescription>{gbp(product.price)} — {product.mockup ? 'product mock-up; demo price' : product.placeholder ? 'demo placeholder product' : 'demo product'}</DialogDescription>
+            <DialogDescription>{gbp(product.price)} including VAT — {product.mockup ? 'product mock-up' : product.placeholder ? 'demo placeholder product' : 'demo product'}</DialogDescription>
           </DialogHeader>
           <SizePicker sizes={product.sizes} value={size} onChange={setSize} />
           <button data-testid={`button-quickshop-add-${product.id}`} disabled={!size}

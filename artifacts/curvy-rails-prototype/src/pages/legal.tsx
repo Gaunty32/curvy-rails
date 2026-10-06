@@ -6,10 +6,12 @@ const note = 'Draft demonstration text only, not legal advice. To be replaced wi
 
 export function DeliveryReturns() {
   return (
-    <PageShell title="Delivery & Returns" description="Curvy Rails demo delivery and returns information: free UK delivery over £50, otherwise £3.99." heading="Delivery & returns">
+    <PageShell title="Delivery & Returns" description="UK mainland delivery £3.99 including VAT, free over £50. Outside-mainland shipping confirmed separately." heading="Delivery & returns">
       <P children={note} />
       <H children="Delivery" />
-      <P children="UK delivery is free on orders of £50 or more. Orders under £50 are charged £3.99. No orders are actually fulfilled in this prototype." />
+      <P children="All product prices and delivery charges include VAT. UK mainland delivery is £3.99, with free delivery when the product subtotal is over £50. An order with a product subtotal of exactly £50 has a £3.99 delivery charge." />
+      <P children="We also accept orders for destinations outside the UK mainland. Shipping charges are confirmed separately and are additional to the displayed products total. The mainland free-delivery offer does not apply to these destinations, regardless of order value." />
+      <P children="No real orders, shipping quotes or deliveries are processed in this demonstration. A shipping platform will be connected before fulfilment goes live." />
       <H children="Returns" />
       <P children="Placeholder policy: unworn items with tags can be returned within 30 days. Final terms to be confirmed with the real fulfilment set-up." />
     </PageShell>

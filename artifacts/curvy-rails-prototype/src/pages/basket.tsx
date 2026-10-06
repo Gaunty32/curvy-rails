@@ -3,19 +3,20 @@ import { Link } from 'wouter';
 import { Trash2 } from 'lucide-react';
 import { usePageHead } from '@/lib/use-page-head';
 import { asset, gbp } from '@/data/catalogue';
-import { FREE_DELIVERY_OVER, useBasket } from '@/data/basket';
+import { useBasket } from '@/data/basket';
+import { FREE_DELIVERY_OVER, type DeliveryRegion } from '@/data/delivery';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export default function BasketPage() {
-  usePageHead('Basket', 'Review your Curvy Rails demo basket. Free UK delivery over £50. Checkout is simulated.');
+  usePageHead('Basket', 'VAT-inclusive prices. UK mainland delivery £3.99, free over £50. Shipping elsewhere quoted separately. Checkout is simulated.');
   const b = useBasket();
   const [open, setOpen] = useState(false);
-  const [done, setDone] = useState(false);
-  const toGo = FREE_DELIVERY_OVER - b.subtotal;
+  const [done, setDone] = useState<string | null>(null);
+  const toGo = (FREE_DELIVERY_OVER * 100 + 1 - Math.round(b.subtotal * 100)) / 100;
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 md:px-8">
       <h1 className="font-display text-4xl uppercase md:text-6xl">Basket</h1>
-      {done && <p data-testid="text-demo-complete" className="mt-4 border border-black p-4 text-sm font-semibold">Demo checkout complete. This was a simulation: no order was created, no payment was taken and nothing was sent anywhere.</p>}
+      {done && <p data-testid="text-demo-complete" className="mt-4 border border-black p-4 text-sm font-semibold">{done}</p>}
       {b.lines.length === 0 ? (
         <div data-testid="text-basket-empty" className="mt-8 border border-dashed border-black p-12 text-center">
           <p className="font-display text-2xl uppercase">Your basket is empty</p>
@@ -45,12 +46,20 @@ export default function BasketPage() {
           </ul>
           <aside className="h-fit border border-black bg-white p-5 md:sticky md:top-24 md:p-6">
             <h2 className="font-display text-xl uppercase">Summary</h2>
-            <dl className="mt-4 space-y-2 text-sm">
+            <label htmlFor="delivery-region" className="mt-4 block text-sm font-semibold">Delivery destination</label>
+            <select id="delivery-region" data-testid="select-delivery-region" value={b.region} onChange={(e) => b.setRegion(e.target.value as DeliveryRegion)} className="mt-2 h-12 w-full border border-black bg-white px-3 text-base">
+              <option value="mainland">UK mainland</option>
+              <option value="outside-mainland">Outside UK mainland</option>
+            </select>
+            <dl aria-live="polite" className="mt-4 space-y-2 text-sm">
               <div className="flex justify-between"><dt>Subtotal</dt><dd data-testid="text-subtotal">{gbp(b.subtotal)}</dd></div>
-              <div className="flex justify-between"><dt>UK delivery</dt><dd data-testid="text-delivery">{b.delivery === 0 ? 'Free' : gbp(b.delivery)}</dd></div>
-              <div className="flex justify-between border-t pt-2 text-base font-bold"><dt>Total</dt><dd data-testid="text-total">{gbp(b.total)}</dd></div>
+              <div className="flex justify-between gap-3"><dt>{b.region === 'mainland' ? 'UK mainland delivery' : 'Delivery'}</dt><dd data-testid="text-delivery" className="text-right">{b.delivery === null ? 'To be confirmed' : b.delivery === 0 ? 'Free' : gbp(b.delivery)}</dd></div>
+              <div className="flex justify-between border-t pt-2 text-base font-bold"><dt>{b.quoteRequired ? 'Products total' : 'Total'}</dt><dd data-testid="text-total">{gbp(b.total ?? b.subtotal)}</dd></div>
             </dl>
-            {toGo > 0 && <p className="mt-3 text-xs">Add {gbp(toGo)} more for free UK delivery.</p>}
+            <p data-testid="text-vat-notice" className="mt-2 text-xs text-muted-foreground">All prices include VAT, including delivery.</p>
+            {b.quoteRequired
+              ? <p data-testid="text-shipping-quote" className="mt-3 border border-black p-3 text-sm">You can still place an order. An additional shipping charge will be confirmed separately, even on orders over £50. The products total above excludes that charge.</p>
+              : toGo > 0 && <p className="mt-3 text-xs">Add {gbp(toGo)} more for free UK mainland delivery. Product subtotal must be over £50.</p>}
             <button data-testid="button-checkout" onClick={() => setOpen(true)} className="mt-5 h-12 w-full bg-black text-xs font-bold uppercase tracking-widest text-white">Simulated checkout</button>
             <p className="mt-2 text-[11px] text-muted-foreground">Demo only. No card details are collected.</p>
           </aside>
@@ -60,10 +69,16 @@ export default function BasketPage() {
         <DialogContent className="max-h-[90dvh] w-[calc(100vw-2rem)] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display uppercase">Simulated checkout</DialogTitle>
-            <DialogDescription>This is a demonstration. There is no payment form, no account and no order system behind it yet. Stripe, ShipStation and email are not connected.</DialogDescription>
+            <DialogDescription>This is a demonstration. There is no payment form, no account and no order system behind it yet. No payments, fulfilment or emails are triggered.</DialogDescription>
           </DialogHeader>
-          <p className="text-sm">Total that would be charged: <strong>{gbp(b.total)}</strong></p>
-          <button data-testid="button-complete-demo" className="h-11 bg-black text-xs font-bold uppercase tracking-widest text-white" onClick={() => { b.clear(); setOpen(false); setDone(true); }}>Complete demo order</button>
+          <p className="text-sm">Destination: <strong>{b.region === 'mainland' ? 'UK mainland' : 'Outside UK mainland'}</strong></p>
+          {b.quoteRequired
+            ? <p data-testid="text-checkout-quote" className="text-sm">Products total: <strong>{gbp(b.subtotal)} including VAT</strong>. Additional shipping will be quoted separately; the final total is not yet confirmed. Your order can proceed pending that quote. This demo does not send a quote request.</p>
+            : <p className="text-sm">Total including delivery and VAT: <strong>{gbp(b.total ?? 0)}</strong></p>}
+          <button data-testid="button-complete-demo" className="h-11 bg-black text-xs font-bold uppercase tracking-widest text-white" onClick={() => {
+            setDone(`Demo checkout complete.${b.quoteRequired ? ' Outside-mainland shipping would require a separate quote before confirming the final total.' : ''} This was a simulation: no order was created, no payment was taken and nothing was sent anywhere.`);
+            b.clear(); setOpen(false);
+          }}>{b.quoteRequired ? 'Complete demo — shipping quote pending' : 'Complete demo order'}</button>
         </DialogContent>
       </Dialog>
     </div>

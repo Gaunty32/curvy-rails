@@ -1,4 +1,5 @@
 export type Category = 'tshirt' | 'hoodie';
+export const PRODUCT_PRICES: Record<Category, number> = { tshirt: 20, hoodie: 35 };
 export interface Product {
   id: string;
   slug: string;

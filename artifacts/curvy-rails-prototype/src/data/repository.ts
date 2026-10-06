@@ -1,5 +1,5 @@
 import type { Product } from './types';
-import { normalizeSize } from './types';
+import { normalizeSize, PRODUCT_PRICES } from './types';
 import { FIRST_PRODUCT, SEED_PRODUCTS } from './seed';
 
 /**
@@ -37,6 +37,8 @@ function read(): Product[] {
     }
     const normalized = items.map((p) => ({
       ...p,
+      price: PRODUCT_PRICES[p.category],
+      description: p.id === FIRST_PRODUCT.id ? p.description.replace(/ Price(?: and sizes are demonstration values| is a demonstration value) pending confirmation\.$/, '') : p.description,
       sizes: [...new Set(p.sizes.map(normalizeSize))],
     }));
     if (raw && JSON.stringify(normalized) !== JSON.stringify(items)) {
@@ -56,7 +58,8 @@ export const localProductRepository: ProductRepository = {
   save(p) {
     const items = read();
     const i = items.findIndex((x) => x.id === p.id);
-    return write(i >= 0 ? items.map((x) => (x.id === p.id ? p : x)) : [...items, p]);
+    const priced = { ...p, price: PRODUCT_PRICES[p.category] };
+    return write(i >= 0 ? items.map((x) => (x.id === p.id ? priced : x)) : [...items, priced]);
   },
   remove: (id) => write(read().filter((x) => x.id !== id)),
   reset() { localStorage.removeItem(KEY); return SEED_PRODUCTS; },

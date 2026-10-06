@@ -2,15 +2,18 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { useProducts } from './catalogue';
 import type { Product } from './types';
 import { normalizeSize } from './types';
+import { calculateDelivery, type DeliveryRegion } from './delivery';
 
 interface Line { productId: string; size: string; qty: number }
-export const FREE_DELIVERY_OVER = 50;
-export const DELIVERY_FEE = 3.99;
 const KEY = 'cr.demo.basket.v1';
+const REGION_KEY = 'cr.demo.delivery-region.v1';
 
 interface Ctx {
   lines: { product: Product; size: string; qty: number }[];
-  count: number; subtotal: number; delivery: number; total: number;
+  count: number; subtotal: number; delivery: number | null; total: number | null;
+  quoteRequired: boolean;
+  region: DeliveryRegion;
+  setRegion(region: DeliveryRegion): void;
   add(id: string, size: string, qty?: number): void;
   setQty(id: string, size: string, qty: number): void;
   remove(id: string, size: string): void;
@@ -33,17 +36,22 @@ export function BasketProvider({ children }: { children: ReactNode }) {
   const [raw, setRaw] = useState<Line[]>(() => {
     try { return normalizeBasket(JSON.parse(localStorage.getItem(KEY) || '[]')); } catch { return []; }
   });
+  const [region, setRegion] = useState<DeliveryRegion>(() => {
+    try { return localStorage.getItem(REGION_KEY) === 'outside-mainland' ? 'outside-mainland' : 'mainland'; }
+    catch { return 'mainland'; }
+  });
   useEffect(() => { localStorage.setItem(KEY, JSON.stringify(raw)); }, [raw]);
+  useEffect(() => { try { localStorage.setItem(REGION_KEY, region); } catch { /* Storage may be unavailable. */ } }, [region]);
   const value = useMemo<Ctx>(() => {
     const lines = raw.flatMap((l) => {
       const product = products.find((p) => p.id === l.productId);
       return product ? [{ product, size: l.size, qty: l.qty }] : [];
     });
-    const subtotal = lines.reduce((s, l) => s + l.product.price * l.qty, 0);
-    const delivery = lines.length === 0 || subtotal >= FREE_DELIVERY_OVER ? 0 : DELIVERY_FEE;
+    const subtotal = Math.round(lines.reduce((s, l) => s + l.product.price * l.qty, 0) * 100) / 100;
+    const amounts = calculateDelivery(subtotal, region, lines.length > 0);
     const same = (l: Line, id: string, size: string) => l.productId === id && l.size === size;
     return {
-      lines, subtotal, delivery, total: subtotal + delivery,
+      lines, subtotal, ...amounts, region, setRegion,
       count: lines.reduce((s, l) => s + l.qty, 0),
       add: (id, size, qty = 1) => setRaw((r) => r.some((l) => same(l, id, size))
         ? r.map((l) => (same(l, id, size) ? { ...l, qty: Math.min(10, l.qty + qty) } : l))
@@ -52,7 +60,7 @@ export function BasketProvider({ children }: { children: ReactNode }) {
       remove: (id, size) => setRaw((r) => r.filter((l) => !same(l, id, size))),
       clear: () => setRaw([]),
     };
-  }, [raw, products]);
+  }, [raw, products, region]);
   return <C.Provider value={value}>{children}</C.Provider>;
 }
 export function useBasket() {

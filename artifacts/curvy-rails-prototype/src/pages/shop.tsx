@@ -6,8 +6,8 @@ import { ALL_SIZES, type Category } from '@/data/types';
 
 const META = {
   all: ['Shop all', 'Browse every Curvy Rails T-shirt and hoodie in sizes 16-32. Demo catalogue.', 'Shop all'],
-  tshirt: ['T-Shirts', 'Curvy Rails graphic T-shirts for sizes 16-32, £24. Demo catalogue.', 'T-Shirts'],
-  hoodie: ['Hoodies', 'Curvy Rails graphic hoodies for sizes 16-32, £38. Demo catalogue.', 'Hoodies'],
+  tshirt: ['T-Shirts', 'Curvy Rails graphic T-shirts in sizes 16-24 and 26-32, £20 including VAT. Demo catalogue.', 'T-Shirts'],
+  hoodie: ['Hoodies', 'Curvy Rails graphic hoodies in sizes 16-24 and 26-32, £35 including VAT. Demo catalogue.', 'Hoodies'],
 } as const;
 
 export default function Shop({ category }: { category?: Category }) {

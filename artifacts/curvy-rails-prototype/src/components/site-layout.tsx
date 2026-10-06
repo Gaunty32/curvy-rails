@@ -16,9 +16,9 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   useEffect(() => { setOpen(false); }, [loc]);
   return (
     <div className="flex min-h-[100dvh] flex-col">
-      <div className="safe-x bg-black py-2 text-center text-[11px] font-semibold uppercase tracking-widest text-white">Free UK delivery over £50 &middot; Sizes 16-32</div>
+      <div className="safe-x bg-black py-2 text-center text-[11px] font-semibold uppercase tracking-widest text-white">Free UK mainland delivery over £50 &middot; Sizes 16-32</div>
       <div className="safe-x border-b bg-neutral-200 py-1.5 text-center text-xs leading-snug text-neutral-700" data-testid="text-demo-notice">
-        Prototype demo: placeholder products and images, no real orders or payments. Data stays in your browser.
+        Prototype demo: placeholder products and images, no real orders or payments. Data stays in your browser. All prices include VAT.
       </div>
       <header className="sticky top-0 z-30 border-b border-black/10 bg-background/95 backdrop-blur">
         <div className="safe-x mx-auto flex h-16 max-w-7xl items-center justify-between md:h-20 md:px-8">
