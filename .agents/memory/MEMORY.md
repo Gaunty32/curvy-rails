@@ -3,3 +3,4 @@
 - [Storefront prototype direction](storefront-prototype-direction.md) — the separate demonstration storefront was approved; preserve its supplied visual direction and mobile-first priorities.
 - [Product size policy](product-size-policy.md) — Curvy Rails offers two size options, 16–24 and 26–32, unless the user advises otherwise.
 - [Launch services](launch-services.md) — 123-reg is the chosen registrar; Resend is for customer order notifications and status updates.
+- [VAT and delivery policy](vat-delivery-policy.md) — prices include VAT; mainland shipping £3.99; other destinations quoted separately; free shipping over £50.
